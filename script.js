@@ -291,10 +291,15 @@ class Enemy{
     }
 }
 
-class RectangleLives{
+class UserGame{
     constructor(lives) {
         this.lives = lives;
         this.iniLives = lives;
+        this.XP = 0;
+    }
+    printData(){
+        this.printLives();
+        this.printXP();
     }
     printLives(){
         c.save();
@@ -310,11 +315,18 @@ class RectangleLives{
         c.fill();
         c.restore();
     }
+    printXP(){
+        c.save();
+        c.font = "bold 30px Raleway"
+        c.textAlign = "center";
+        c.fillText(`${this.XP} xp`, window.innerWidth/2, window.innerHeight-20); // 20 is a margin
+        c.restore();
+    }
     reduceLives(amount){
         this.lives-=amount;
         if (this.lives <= 0) {
             endGame = true;
-            alert("Game Over!");
+            alert(`Game Over!\nHas conseguido ${User.XP} xp`);
         }
     }
     increaseLives(amount){
@@ -325,6 +337,12 @@ class RectangleLives{
             this.lives = this.iniLives;
         }
     }
+    increaseXP(amount){
+        this.XP+=amount;
+    }
+    reduceXP(amount){
+        this.XP-=amount;
+    }
 }
 
 
@@ -332,14 +350,15 @@ class RectangleLives{
 
 var enemyConfiguration = {
     "basic":{
-        lives: 5,
-        intervalShooting: 1000,
-        bulletSize: 15,
-        bRange: 200,
-        radius: 40,
-        radiusBullets: 15,
-        bulletEnemySpeed: 5,
-        imgSrc: "basicEnemy.png"
+        lives: 5, // enemy lives
+        intervalShooting: 1000, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 5, // speed of the bullets (in px / iteration)
+        awardXP: 100, // xp given when enemy killed
+        awardLives: 1, // lives given when enemy killed
+        imgSrc: "basicEnemy.png" // path to enemy image
     }
 }
 
@@ -367,7 +386,7 @@ const myPoint = new CordsPoint(document.getElementById("point"));
 
 const centerUser = document.getElementById("centerUser");
 
-var rectLives = new RectangleLives(5);
+var User = new UserGame(5);
 
 var mouseX = window.innerWidth/2;
 var mouseY = window.innerHeight/2;
@@ -529,9 +548,10 @@ function movePoint(){
                                                     enemies[j].config.radius, mainCanon.bulletArray[i].radius)) {
                                                         --enemies[j].lives;
                                                         if (enemies[j].lives == 0) {
+                                                            User.increaseLives(enemies[j].config.awardLives);
+                                                            User.increaseXP(enemies[j].config.awardXP);
                                                             enemies.splice(j, 1);
                                                             --j;
-                                                            rectLives.increaseLives(1);
                                                         }
                                                         mainCanon.bulletArray.splice(i, 1);
                                                         --i;
@@ -566,7 +586,8 @@ function movePoint(){
         if (detectCricleCircleCollision(window.innerWidth/2, window.innerHeight/2, bulletsEnemies[i].x, bulletsEnemies[i].y, RADIUS_TANK, bulletsEnemies[i].radius)) {
             bulletsEnemies.splice(i, 1);
             --i;
-            rectLives.reduceLives(1);
+            User.reduceLives(1);
+            User.reduceXP(10);
             removedBullet = true;
         }
         if (!removedBullet && bulletsEnemies[i].counterIterations == 0) {
@@ -575,7 +596,7 @@ function movePoint(){
         }
     }
 
-    rectLives.printLives();
+    User.printData();
     if (!endGame) {
         requestAnimationFrame(movePoint);
     }
