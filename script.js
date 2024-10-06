@@ -386,7 +386,7 @@ const OPTIONS = {
 }
 
 const ENEMY_OPTIONS = {
-    NUM_ENEMIES: 20
+    NUM_ENEMIES: 100
 }
 
 var mainCanon = new Canon();
@@ -441,20 +441,22 @@ for (let i = 0; i < OPTIONS.NUM_WALLS; ++i) {
 }
 
 // Create Enemies
-for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES; ++i) {
-    let posX0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
-    let posY0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
-    let typeE = "basic";
-    let collisionDetected = false;
-    for (let j = 0; j < walls.length; ++j) {
-        if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, posX0, posY0, enemyConfiguration[typeE].radius).collision) {
-            --i;
-            collisionDetected = true;
-            break;
+function iniEnemies() {
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES; ++i) {
+        let posX0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
+        let posY0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
+        let typeE = "basic";
+        let collisionDetected = false;
+        for (let j = 0; j < walls.length; ++j) {
+            if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, posX0, posY0, enemyConfiguration[typeE].radius).collision) {
+                --i;
+                collisionDetected = true;
+                break;
+            }
         }
-    }
-    if (!collisionDetected) {
-        enemies.push(new Enemy(posX0, posY0, typeE));
+        if (!collisionDetected) {
+            enemies.push(new Enemy(posX0, posY0, typeE));
+        }
     }
 }
 
@@ -579,4 +581,11 @@ function movePoint(){
     }
 }
 
-movePoint();
+// Start game config
+
+document.getElementById("playDiv").addEventListener("click", () => {
+    document.getElementById("playDivBckg").style.display = "none";
+    document.getElementById("centerUser").style.display = "block";
+    iniEnemies();
+    movePoint();
+}) 
