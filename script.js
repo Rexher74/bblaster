@@ -326,7 +326,7 @@ class UserGame{
         this.lives-=amount;
         if (this.lives <= 0) {
             endGame = true;
-            alert(`Game Over!\nHas conseguido ${User.XP} xp`);
+            alert('Game Over!');
         }
     }
     increaseLives(amount){
@@ -351,7 +351,7 @@ class UserGame{
 var enemyConfiguration = {
     "basic":{
         lives: 5, // enemy lives
-        intervalShooting: 1000, // millisecond between every shoot
+        intervalShooting: 1500, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
@@ -460,22 +460,28 @@ for (let i = 0; i < OPTIONS.NUM_WALLS; ++i) {
 }
 
 // Create Enemies
-function iniEnemies() {
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES; ++i) {
+function spawnNewEnemy(){
+    spawned = false;
+    while (!spawned) {
         let posX0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
         let posY0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
         let typeE = "basic";
         let collisionDetected = false;
         for (let j = 0; j < walls.length; ++j) {
             if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, posX0, posY0, enemyConfiguration[typeE].radius).collision) {
-                --i;
                 collisionDetected = true;
                 break;
             }
         }
         if (!collisionDetected) {
             enemies.push(new Enemy(posX0, posY0, typeE));
+            spawned = true;
         }
+    }
+}
+function iniEnemies() {
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES; ++i) {
+        spawnNewEnemy();
     }
 }
 
@@ -519,6 +525,13 @@ function movePoint(){
     }
     for (let i = 0; i < walls.length; ++i) {
         walls[i].move(mx, my);
+        for (let j = 0; j < bulletsEnemies.length; ++j) {
+            if (detectCircleLineCollision(walls[i].x0, walls[i].y0, walls[i].x1, walls[i].y1, bulletsEnemies[j].x+pos00x, bulletsEnemies[j].y+pos00y, bulletsEnemies[j].radius).collision) {
+                // remove enemy bullet
+                bulletsEnemies.splice(j, 1);
+                --j;
+            }
+        }
     }
     c.shadowBlur = 10;
     for (let i = 0; i < mainCanon.bulletArray.length; ++i) {
@@ -528,9 +541,11 @@ function movePoint(){
             if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, mainCanon.bulletArray[i].x+pos00x, mainCanon.bulletArray[i].y+pos00y, mainCanon.bulletArray[i].radius).collision) {
                 --walls[j].lives;
                 if (walls[j].lives == 0) {
+                    // remove wall
                     walls.splice(j, 1);
                     --j;
                 }
+                // remove bullet
                 mainCanon.bulletArray.splice(i, 1);
                 --i;
                 removed = true;
@@ -539,6 +554,7 @@ function movePoint(){
         }
         if (!removed) {
             if (mainCanon.bulletArray[i].counterIterations == 0) {
+                // remove bullet
                 mainCanon.bulletArray.splice(i, 1);
                 --i;
             }
@@ -546,17 +562,19 @@ function movePoint(){
                 for (let j = 0; j < enemies.length; ++j) {
                     if (detectCricleCircleCollision(enemies[j].x, enemies[j].y, mainCanon.bulletArray[i].x+pos00x, mainCanon.bulletArray[i].y+pos00y,
                                                     enemies[j].config.radius, mainCanon.bulletArray[i].radius)) {
-                                                        --enemies[j].lives;
-                                                        if (enemies[j].lives == 0) {
-                                                            User.increaseLives(enemies[j].config.awardLives);
-                                                            User.increaseXP(enemies[j].config.awardXP);
-                                                            enemies.splice(j, 1);
-                                                            --j;
-                                                        }
-                                                        mainCanon.bulletArray.splice(i, 1);
-                                                        --i;
-                                                        break;
-                                                    }
+                        --enemies[j].lives;
+                        if (enemies[j].lives == 0) {
+                            User.increaseLives(enemies[j].config.awardLives);
+                            User.increaseXP(enemies[j].config.awardXP);
+                            // remove enemy
+                            enemies.splice(j, 1);
+                            --j;
+                        }
+                        // remove bullet
+                        mainCanon.bulletArray.splice(i, 1);
+                        --i;
+                        break;
+                    }
                 }
             }
         } 
@@ -584,6 +602,7 @@ function movePoint(){
         c.restore();
         let removedBullet = false;
         if (detectCricleCircleCollision(window.innerWidth/2, window.innerHeight/2, bulletsEnemies[i].x, bulletsEnemies[i].y, RADIUS_TANK, bulletsEnemies[i].radius)) {
+            // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
             User.reduceLives(1);
@@ -591,6 +610,7 @@ function movePoint(){
             removedBullet = true;
         }
         if (!removedBullet && bulletsEnemies[i].counterIterations == 0) {
+            // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
         }
