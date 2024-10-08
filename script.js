@@ -193,7 +193,7 @@ class Canon{
         this.bulletArray = [];
         this.bulletRange = 60;
         this.bulletSpeed = 7;
-        this.intervalShooting = 1000; // in milliseconds
+        this.intervalShooting = 250; // in milliseconds
         this.lastShoot = performance.now()-this.intervalShooting;
     }
     shoot(ex, ey) {
@@ -201,25 +201,31 @@ class Canon{
             let varXPos = ex - window.innerWidth/2;
             let varYPos = ey - window.innerHeight/2;
             let unitaryVect = unitVector(varXPos, varYPos);
-            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange));
+            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black"));
             this.lastShoot = performance.now();
         }
     }
 }
 
 class Bullet{
-    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet) {
+    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet, color) {
         this.x = iniX;
         this.y = iniY;
+        this.color = color;
         this.radius = radius;
         this.directionX = dirX*bulletSpeed;
         this.directionY = dirY*bulletSpeed;
         this.counterIterations = rangeBullet;
     }
     update() {
+        c.save();
+        c.fillStyle = this.color;
+        c.shadowBlur = 10;
+        c.shadowColor = this.color;
         c.beginPath();
         c.arc(this.x, this.y, this.radius, 0, 2*Math.PI);
         c.fill();
+        c.restore();
     }
     move(extraX, extraY){
         this.x += (this.directionX+extraX);
@@ -280,7 +286,7 @@ class Enemy{
         let varY = window.innerHeight/2 - (this.y - pos00y);
         let unitaryVect = unitVector(varX, varY);
         bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                        this.x - pos00x, this.y - pos00y, this.config.bRange));
+                                        this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color));
         this.lastShoot = performance.now();
     }
     tryShoot() {
@@ -292,13 +298,16 @@ class Enemy{
 }
 
 class UserGame{
-    constructor(lives) {
+    constructor(lives, base_shield) {
         this.lives = lives;
-        this.iniLives = lives;
+        this.shield = 0;
+        this.baseLives = lives;
+        this.baseShield = base_shield;
         this.XP = 0;
     }
     printData(){
         this.printLives();
+        this.printShield();
         this.printXP();
     }
     printLives(){
@@ -307,11 +316,25 @@ class UserGame{
         c.strokeStyle = "rgb(128, 247, 128)";
         c.fillStyle = "rgb(128, 247, 128)";
         c.beginPath();
+        c.rect(window.innerWidth*7/16, 40, window.innerWidth*2/16, 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
+        c.stroke();
+        c.lineWidth = "0";
+        c.beginPath();
+        c.rect(window.innerWidth*7/16, 40, (window.innerWidth*2/16)*(this.lives/this.baseLives), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
+        c.fill();
+        c.restore();
+    }
+    printShield(){
+        c.save();
+        c.lineWidth = 4;
+        c.strokeStyle = "rgb(75, 147, 255)";
+        c.fillStyle = "rgb(75, 147, 255)";
+        c.beginPath();
         c.rect(window.innerWidth*7/16, 20, window.innerWidth*2/16, 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.stroke();
         c.lineWidth = "0";
         c.beginPath();
-        c.rect(window.innerWidth*7/16, 20, (window.innerWidth*2/16)*(this.lives/this.iniLives), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
+        c.rect(window.innerWidth*7/16, 20, (window.innerWidth*2/16)*(this.shield/this.baseShield), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.fill();
         c.restore();
     }
@@ -322,6 +345,16 @@ class UserGame{
         c.fillText(`${this.XP} xp`, window.innerWidth/2, window.innerHeight-20); // 20 is a margin
         c.restore();
     }
+    makeDamage(amount) {
+        if (this.shield >= amount) {
+            this.reduceShield(amount);
+        }
+        else {
+            let remaining = amount-this.shield;
+            this.reduceShield(this.shield);
+            this.reduceLives(remaining);
+        }
+    }
     reduceLives(amount){
         this.lives-=amount;
         if (this.lives <= 0) {
@@ -329,12 +362,23 @@ class UserGame{
             alert('Game Over!');
         }
     }
+    reduceShield(amount){
+        this.shield-=amount;
+    }
     increaseLives(amount){
-        if (this.lives+amount <= this.iniLives) {
+        if (this.lives+amount <= this.baseLives) {
             this.lives += amount;
         }
         else {
-            this.lives = this.iniLives;
+            this.lives = this.baseLives;
+        }
+    }
+    increaseShield(amount){
+        if (this.shield+amount <= this.baseShield) {
+            this.shield += amount;
+        }
+        else {
+            this.shield = this.baseShield;
         }
     }
     increaseXP(amount){
@@ -351,14 +395,55 @@ class UserGame{
 var enemyConfiguration = {
     "basic":{
         lives: 5, // enemy lives
-        intervalShooting: 1500, // millisecond between every shoot
+        intervalShooting: 1300, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 5, // speed of the bullets (in px / iteration)
         awardXP: 100, // xp given when enemy killed
         awardLives: 1, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#52B26A", // color of the bullet
         imgSrc: "basicEnemy.png" // path to enemy image
+    },
+    "rare":{
+        lives: 10, // enemy lives
+        intervalShooting: 700, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 7, // speed of the bullets (in px / iteration)
+        awardXP: 300, // xp given when enemy killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#005DAD", // color of the bullet
+        imgSrc: "rareEnemy.png" // path to enemy image
+    },
+    "epic":{
+        lives: 25, // enemy lives
+        intervalShooting: 300, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
+        awardXP: 500, // xp given when enemy killed
+        awardLives: 3, // lives given when enemy killed
+        awardShield: 2, // shield given when killed
+        color: "#9847FE", // color of the bullet
+        imgSrc: "epicEnemy.png" // path to enemy image
+    },
+    "legendary":{
+        lives: 50, // enemy lives
+        intervalShooting: 100, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 15, // speed of the bullets (in px / iteration)
+        awardXP: 1000, // xp given when enemy killed
+        awardLives: 5, // lives given when enemy killed
+        awardShield: 5, // shield given when killed
+        color: "#FFD658", // color of the bullet
+        imgSrc: "legendaryEnemy.png" // path to enemy image
     }
 }
 
@@ -386,7 +471,10 @@ const myPoint = new CordsPoint(document.getElementById("point"));
 
 const centerUser = document.getElementById("centerUser");
 
-var User = new UserGame(5);
+const USER_BASE_LIVES = 10;
+const USER_BASE_SHIELD = 10;
+
+var User = new UserGame(USER_BASE_LIVES, USER_BASE_SHIELD);
 
 var mouseX = window.innerWidth/2;
 var mouseY = window.innerHeight/2;
@@ -405,7 +493,10 @@ const OPTIONS = {
 }
 
 const ENEMY_OPTIONS = {
-    NUM_ENEMIES: 100
+    NUM_ENEMIES_BASIC: 120,
+    NUM_ENEMIES_RARE: 50,
+    NUM_ENEMIES_EPIC: 10,
+    NUM_ENEMIES_LEGENDARY: 3,
 }
 
 var mainCanon = new Canon();
@@ -433,10 +524,6 @@ window.addEventListener("keyup", e => {
     else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = false;
 })
 
-window.addEventListener("mousedown", (e) => {
-    mainCanon.shoot(e.clientX, e.clientY);
-})
-
 // Create Walls
 
 var walls = [];
@@ -460,12 +547,11 @@ for (let i = 0; i < OPTIONS.NUM_WALLS; ++i) {
 }
 
 // Create Enemies
-function spawnNewEnemy(){
+function spawnNewEnemy(typeE){
     spawned = false;
     while (!spawned) {
         let posX0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
         let posY0 = (randomIntFromInterval(0, 100*OPTIONS.MAP_SIZE));
-        let typeE = "basic";
         let collisionDetected = false;
         for (let j = 0; j < walls.length; ++j) {
             if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, posX0, posY0, enemyConfiguration[typeE].radius).collision) {
@@ -480,8 +566,17 @@ function spawnNewEnemy(){
     }
 }
 function iniEnemies() {
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES; ++i) {
-        spawnNewEnemy();
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_BASIC; ++i) {
+        spawnNewEnemy("basic");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_RARE; ++i) {
+        spawnNewEnemy("rare");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_EPIC; ++i) {
+        spawnNewEnemy("epic");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY; ++i) {
+        spawnNewEnemy("legendary");
     }
 }
 
@@ -565,6 +660,7 @@ function movePoint(){
                         --enemies[j].lives;
                         if (enemies[j].lives == 0) {
                             User.increaseLives(enemies[j].config.awardLives);
+                            User.increaseShield(enemies[j].config.awardShield);
                             User.increaseXP(enemies[j].config.awardXP);
                             // remove enemy
                             enemies.splice(j, 1);
@@ -594,18 +690,13 @@ function movePoint(){
     }
 
     for (let i = 0; i < bulletsEnemies.length; ++i) {
-        c.save();
-        c.fillStyle = "red";
-        c.shadowBlur = 10;
-        c.shadowColor = "red";
         bulletsEnemies[i].move(mx, my);
-        c.restore();
         let removedBullet = false;
         if (detectCricleCircleCollision(window.innerWidth/2, window.innerHeight/2, bulletsEnemies[i].x, bulletsEnemies[i].y, RADIUS_TANK, bulletsEnemies[i].radius)) {
             // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
-            User.reduceLives(1);
+            User.makeDamage(1);
             User.reduceXP(10);
             removedBullet = true;
         }
@@ -634,6 +725,25 @@ document.getElementById("playDiv").addEventListener("click", () => {
     if (mobileAndTabletCheck) {
         document.getElementById("playDivBckg").style.display = "none";
         document.getElementById("centerUser").style.display = "block";
+        var keepShooting;
+var mousePressed = false;
+
+    window.addEventListener("mousedown", (e) => {
+        if (!mousePressed) {
+            mainCanon.shoot(e.clientX, e.clientY);
+            mousePressed = true;
+            keepShooting = setInterval(function(){
+                mainCanon.shoot(mouseX, mouseY);
+            })
+        }
+    })
+
+    window.addEventListener("mouseup", function() {
+        if (mousePressed) {
+            clearInterval(keepShooting);
+            mousePressed = false;
+        }
+    })
         iniEnemies();
         movePoint();
     }
