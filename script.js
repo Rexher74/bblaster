@@ -179,13 +179,14 @@ class CordsPoint {
 }
 
 class Wall{
-    constructor(x0, y0, x1, y1, horizontal) {
+    constructor(x0, y0, x1, y1, horizontal, limit) {
         this.x0 = x0;
         this.y0 = y0;
         this.x1 = x1;
         this.y1 = y1;
         this.horizontal = horizontal;
         this.lives = 10;
+        this.limit = limit;
     }
 
     move(dx, dy) {
@@ -211,10 +212,21 @@ class Wall{
     }
 
     printInScreen() {
-        c.beginPath();
-        c.moveTo(this.x0-pos00x, this.y0-pos00y);
-        c.lineTo(this.x1-pos00x, this.y1-pos00y);
-        c.stroke();
+        if (this.limit) {
+            c.save();
+            c.shadowBlur = 20;
+            c.beginPath();
+            c.moveTo(this.x0-pos00x, this.y0-pos00y);
+            c.lineTo(this.x1-pos00x, this.y1-pos00y);
+            c.stroke();
+            c.restore();
+        }
+        else {
+            c.beginPath();
+            c.moveTo(this.x0-pos00x, this.y0-pos00y);
+            c.lineTo(this.x1-pos00x, this.y1-pos00y);
+            c.stroke();
+        }
     }
 }
 
@@ -224,7 +236,7 @@ class Canon{
         this.bulletArray = [];
         this.bulletRange = 60;
         this.bulletSpeed = 7;
-        this.intervalShooting = 250; // in milliseconds
+        this.intervalShooting = 300; // in milliseconds
         this.lastShoot = performance.now()-this.intervalShooting;
     }
     shoot(ex, ey) {
@@ -391,7 +403,7 @@ class Enemy{
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
                                     this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig));
             // laterals
-            let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 30);
+            let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 20);
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
                                     this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
@@ -415,17 +427,25 @@ class Enemy{
 }
 
 class UserGame{
-    constructor(lives, base_shield) {
+    constructor(lives, base_shield, eTotal) {
         this.lives = lives;
         this.shield = 0;
         this.baseLives = lives;
         this.baseShield = base_shield;
         this.XP = 0;
+        this.eRemaining = eTotal;
     }
     printData(){
         this.printLives();
         this.printShield();
         this.printXP();
+        this.printEnemiesRemaining();
+    }
+    printEnemiesRemaining(){
+        c.save();
+        c.font = "bold 15px Raleway"
+        c.fillText(`Enemies Remaining: ${this.eRemaining}`, 10, 20); // position (20, 20) px
+        c.restore();
     }
     printLives(){
         c.save();
@@ -504,6 +524,13 @@ class UserGame{
     reduceXP(amount){
         this.XP-=amount;
     }
+    decreaseNumEnemies(){
+        --this.eRemaining;
+        if (this.eRemaining == 0) {
+            endGame = true;
+            alert('You Win!');
+        }
+    }
 }
 
 
@@ -521,7 +548,7 @@ var enemyConfiguration = {
         awardLives: 1, // lives given when enemy killed
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
-        imgSrc: "basicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/basicEnemy1.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -536,7 +563,7 @@ var enemyConfiguration = {
     },
     "basicPredefined4":{
         lives: 5, // enemy lives
-        intervalShooting: 1200, // millisecond between every shoot
+        intervalShooting: 1000, // millisecond between every shoot
         bRange: 150, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
@@ -545,7 +572,7 @@ var enemyConfiguration = {
         awardLives: 1, // lives given when enemy killed
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
-        imgSrc: "basicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/basicEnemy2.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -564,12 +591,12 @@ var enemyConfiguration = {
         bRange: 150, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 35, // size of the bullet
-        bulletEnemySpeed: 4, // speed of the bullets (in px / iteration)
+        bulletEnemySpeed: 6, // speed of the bullets (in px / iteration)
         awardXP: 100, // xp given when enemy killed
         awardLives: 1, // lives given when enemy killed
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
-        imgSrc: "basicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/basicEnemy3.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -590,10 +617,10 @@ var enemyConfiguration = {
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 7, // speed of the bullets (in px / iteration)
         awardXP: 300, // xp given when enemy killed
-        awardLives: 2, // lives given when enemy killed
-        awardShield: 0, // shield given when killed
+        awardLives: 1, // lives given when enemy killed
+        awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
-        imgSrc: "rareEnemy.png", // path to enemy image
+        imgSrc: "./enemies/rareEnemy1.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -614,10 +641,10 @@ var enemyConfiguration = {
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 7, // speed of the bullets (in px / iteration)
         awardXP: 300, // xp given when enemy killed
-        awardLives: 2, // lives given when enemy killed
-        awardShield: 0, // shield given when killed
+        awardLives: 1, // lives given when enemy killed
+        awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
-        imgSrc: "rareEnemy.png", // path to enemy image
+        imgSrc: "./enemies/rareEnemy2.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -638,10 +665,10 @@ var enemyConfiguration = {
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 9, // speed of the bullets (in px / iteration)
         awardXP: 300, // xp given when enemy killed
-        awardLives: 2, // lives given when enemy killed
-        awardShield: 0, // shield given when killed
+        awardLives: 1, // lives given when enemy killed
+        awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
-        imgSrc: "rareEnemy.png", // path to enemy image
+        imgSrc: "./enemies/rareEnemy3.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -665,7 +692,7 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "epicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/epicEnemy1.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -689,7 +716,7 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "epicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/epicEnemy2.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -713,7 +740,7 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "epicEnemy.png", // path to enemy image
+        imgSrc: "./enemies/epicEnemy3.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -737,7 +764,7 @@ var enemyConfiguration = {
         awardLives: 10, // lives given when enemy killed
         awardShield: 10, // shield given when killed
         color: "#FFD658", // color of the bullet
-        imgSrc: "legendaryEnemy.png", // path to enemy image
+        imgSrc: "./enemies/legendaryEnemy1.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -761,7 +788,7 @@ var enemyConfiguration = {
         awardLives: 10, // lives given when enemy killed
         awardShield: 10, // shield given when killed
         color: "#FFD658", // color of the bullet
-        imgSrc: "legendaryEnemy.png", // path to enemy image
+        imgSrc: "./enemies/legendaryEnemy2.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -780,12 +807,12 @@ var enemyConfiguration = {
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
-        bulletEnemySpeed: 6, // speed of the bullets (in px / iteration)
+        bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
         awardXP: 1000, // xp given when enemy killed
         awardLives: 10, // lives given when enemy killed
         awardShield: 10, // shield given when killed
         color: "#FFD658", // color of the bullet
-        imgSrc: "legendaryEnemy.png", // path to enemy image
+        imgSrc: "./enemies/legendaryEnemy3.png", // path to enemy image
 
         // habilities
         bConfig: {
@@ -827,8 +854,6 @@ const centerUser = document.getElementById("centerUser");
 const USER_BASE_LIVES = 10;
 const USER_BASE_SHIELD = 10;
 
-var User = new UserGame(USER_BASE_LIVES, USER_BASE_SHIELD);
-
 var mouseX = window.innerWidth/2;
 var mouseY = window.innerHeight/2;
 
@@ -841,26 +866,33 @@ var keyController = {
 
 const OPTIONS = {
     MAP_SIZE: 100, // map size in pixels = 100*MAP_SIZE
-    NUM_WALLS: 250,
-    WALL_SIZE: 1000
+    NUM_WALLS: 500,
+    WALL_SIZE: 500,
+    MINIMUM_SPAWN_DISTANCE: 1500
 }
 
 const ENEMY_OPTIONS = {
-    NUM_ENEMIES_BASIC_ELEMENTARY: 17,
-    NUM_ENEMIES_BASIC_PREDEFINED4: 17,
-    NUM_ENEMIES_BASIC_BIGBALL: 17,
-    NUM_ENEMIES_RARE_ELEMENTARY: 8,
-    NUM_ENEMIES_RARE_DOUBLE: 8,
-    NUM_ENEMIES_RARE_PREDEFINEDIT: 8,
-    NUM_ENEMIES_EPIC_ELEMENTARY: 3,
-    NUM_ENEMIES_EPIC_WALLTRAVESSER: 3,
-    NUM_ENEMIES_EPIC_TRIPLE: 3,
+    NUM_ENEMIES_BASIC_ELEMENTARY: 20,
+    NUM_ENEMIES_BASIC_PREDEFINED4: 20,
+    NUM_ENEMIES_BASIC_BIGBALL: 20,
+    NUM_ENEMIES_RARE_ELEMENTARY: 15,
+    NUM_ENEMIES_RARE_DOUBLE: 15,
+    NUM_ENEMIES_RARE_PREDEFINEDIT: 15,
+    NUM_ENEMIES_EPIC_ELEMENTARY: 4,
+    NUM_ENEMIES_EPIC_WALLTRAVESSER: 4,
+    NUM_ENEMIES_EPIC_TRIPLE: 4,
     NUM_ENEMIES_LEGENDARY_ELEMENTARY: 1,
     NUM_ENEMIES_LEGENDARY_PRESUIT: 1,
     NUM_ENEMIES_LEGENDARY_MULTI: 1,
 }
 
+const numEnemies = Object.values(ENEMY_OPTIONS) // Obtiene los valores del objeto
+    .reduce((acc, value) => acc + value, 0); // Suma todos los valores
+
 var mainCanon = new Canon();
+
+var User = new UserGame(USER_BASE_LIVES, USER_BASE_SHIELD, numEnemies);
+
 
 var pos00x = (OPTIONS.MAP_SIZE*100-window.innerWidth)/2;
 var pos00y = (OPTIONS.MAP_SIZE*100-window.innerHeight)/2;
@@ -902,16 +934,35 @@ for (let i = 0; i < OPTIONS.NUM_WALLS; ++i) {
     if (i < OPTIONS.NUM_WALLS/2) { // vertical
         if (detectCircleLineCollision(posX0, posY0, posX0, posY0+OPTIONS.WALL_SIZE, window.innerWidth / 2 + pos00x, window.innerHeight / 2 + pos00y, RADIUS_TANK).collision) --i;
         else {
-            walls.push(new Wall(posX0, posY0, posX0, posY0+OPTIONS.WALL_SIZE, false));
+            walls.push(new Wall(posX0, posY0, posX0, posY0+OPTIONS.WALL_SIZE, false, false));
         }
     }
     else { // horizontal
         if (detectCircleLineCollision(posX0, posY0, posX0+OPTIONS.WALL_SIZE, posY0, window.innerWidth / 2 + pos00x, window.innerHeight / 2 + pos00y, RADIUS_TANK).collision) --i;
         else {
-            walls.push(new Wall(posX0, posY0, posX0+OPTIONS.WALL_SIZE, posY0, true));
+            walls.push(new Wall(posX0, posY0, posX0+OPTIONS.WALL_SIZE, posY0, true, false));
         }
     }
 }
+
+// Create map limit walls
+c.save();
+c.strokeStyle = "#6e6e6e";
+let numWallsOneSide = 100*OPTIONS.MAP_SIZE/OPTIONS.WALL_SIZE;
+let mapSizePX = 100*OPTIONS.MAP_SIZE;
+for (let i = 0; i < mapSizePX; i+=OPTIONS.WALL_SIZE) {
+    walls.push(new Wall(i, 0, i+OPTIONS.WALL_SIZE, 0, true, true));
+}
+for (let i = 0; i < mapSizePX; i+=OPTIONS.WALL_SIZE) {
+    walls.push(new Wall(i, 100*OPTIONS.MAP_SIZE, i+OPTIONS.WALL_SIZE, 100*OPTIONS.MAP_SIZE, true, true));
+}
+for (let i = 0; i < mapSizePX; i+=OPTIONS.WALL_SIZE) {
+    walls.push(new Wall(0, i, 0, i+OPTIONS.WALL_SIZE, false, true));
+}
+for (let i = 0; i < mapSizePX; i+=OPTIONS.WALL_SIZE) {
+    walls.push(new Wall(100*OPTIONS.MAP_SIZE, i, 100*OPTIONS.MAP_SIZE, i+OPTIONS.WALL_SIZE, false, true));
+}
+c.restore();
 
 // Create Enemies
 function spawnNewEnemy(typeE){
@@ -926,7 +977,8 @@ function spawnNewEnemy(typeE){
                 break;
             }
         }
-        if (!collisionDetected) {
+        if (!collisionDetected
+            && !detectCricleCircleCollision(posX0, posY0, pos00x+window.innerWidth/2, pos00y+window.innerHeight/2, enemyConfiguration[typeE].radius, OPTIONS.MINIMUM_SPAWN_DISTANCE)) {
             enemies.push(new Enemy(posX0, posY0, typeE));
             spawned = true;
         }
@@ -1025,7 +1077,7 @@ function movePoint(){
         let removed = false;
         for (let j = 0; j < walls.length; ++j) {
             if (detectCircleLineCollision(walls[j].x0, walls[j].y0, walls[j].x1, walls[j].y1, mainCanon.bulletArray[i].x+pos00x, mainCanon.bulletArray[i].y+pos00y, mainCanon.bulletArray[i].radius).collision) {
-                --walls[j].lives;
+                if (!walls[j].limit) --walls[j].lives;
                 if (walls[j].lives == 0) {
                     // remove wall
                     walls.splice(j, 1);
@@ -1054,6 +1106,7 @@ function movePoint(){
                             User.increaseShield(enemies[j].config.awardShield);
                             User.increaseXP(enemies[j].config.awardXP);
                             // remove enemy
+                            User.decreaseNumEnemies();
                             enemies.splice(j, 1);
                             --j;
                         }
@@ -1082,16 +1135,14 @@ function movePoint(){
 
     for (let i = 0; i < bulletsEnemies.length; ++i) {
         bulletsEnemies[i].move(mx, my);
-        let removedBullet = false;
         if (detectCricleCircleCollision(window.innerWidth/2, window.innerHeight/2, bulletsEnemies[i].x, bulletsEnemies[i].y, RADIUS_TANK, bulletsEnemies[i].radius)) {
             // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
             User.makeDamage(1);
             User.reduceXP(10);
-            removedBullet = true;
         }
-        if (!removedBullet && bulletsEnemies[i].counterIterations == 0) {
+        else if (bulletsEnemies[i].counterIterations == 0) {
             // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;

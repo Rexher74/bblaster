@@ -55,3 +55,14 @@ body {
     background: rgb(18, 78, 167);
     padding: 30px;
 }
+
+.alertParent {
+    display: flex;
+    justify-content: center;
+    width: 100vw;
+}
+
+.alertRed {
+    font-family: "Raleway", sans-serif;
+    font-size: 20px;
+}
