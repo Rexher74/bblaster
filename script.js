@@ -9,6 +9,37 @@ c.lineWidth = 10;
 c.shadowColor = "black";
 
 // Utilities
+
+// Función para convertir grados a radianes
+function gradosARadianes(grados) {
+    return grados * (Math.PI / 180);
+}
+
+// Función para rotar un vector (x, y) por un ángulo theta en radianes
+function rotarVector(x, y, theta) {
+    let xRotado = x * Math.cos(theta) - y * Math.sin(theta);
+    let yRotado = x * Math.sin(theta) + y * Math.cos(theta);
+    return [xRotado, yRotado];
+}
+
+// Función que rota un vector unitario en ángulos especificados hacia la derecha y la izquierda
+function rotarVectorGrados(vector, grados) {
+    // Convertir los grados a radianes
+    let angulo = gradosARadianes(grados);
+
+    // Rotar en sentido horario (derecha, usando ángulo negativo)
+    let vectorDerecha = rotarVector(vector[0], vector[1], -angulo);
+
+    // Rotar en sentido antihorario (izquierda, usando ángulo positivo)
+    let vectorIzquierda = rotarVector(vector[0], vector[1], angulo);
+
+    // Devolver ambos vectores
+    return {
+        derecha: vectorDerecha,
+        izquierda: vectorIzquierda
+    };
+}
+
 function randomIntFromInterval(min, max) { // min and max included 
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
@@ -201,21 +232,23 @@ class Canon{
             let varXPos = ex - window.innerWidth/2;
             let varYPos = ey - window.innerHeight/2;
             let unitaryVect = unitVector(varXPos, varYPos);
-            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black"));
+            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined));
             this.lastShoot = performance.now();
         }
     }
 }
 
 class Bullet{
-    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet, color) {
+    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet, color, eConfig) {
         this.x = iniX;
         this.y = iniY;
         this.color = color;
         this.radius = radius;
+        this.bulletSpeed = bulletSpeed;
         this.directionX = dirX*bulletSpeed;
         this.directionY = dirY*bulletSpeed;
         this.counterIterations = rangeBullet;
+        this.enemyConfig = eConfig;
     }
     update() {
         c.save();
@@ -228,6 +261,11 @@ class Bullet{
         c.restore();
     }
     move(extraX, extraY){
+        if (this.enemyConfig && this.enemyConfig.presuit) {
+            let unitaryVect = unitVector(window.innerWidth/2-this.x, window.innerHeight/2-this.y);
+            this.directionX = unitaryVect[0]*this.bulletSpeed;
+            this.directionY = unitaryVect[1]*this.bulletSpeed;
+        }
         this.x += (this.directionX+extraX);
         this.y += (this.directionY+extraY);
         --this.counterIterations;
@@ -240,6 +278,7 @@ class Enemy{
         this.x = x;
         this.y = y;
         this.config = enemyConfiguration[type];
+        this.iterationAlterner = 0; // just useful if predefinedIt feature of this.config is true
         this.lives = this.config.lives;
         this.iniLives = this.config.lives;
         this.lastShoot = performance.now();
@@ -281,12 +320,90 @@ class Enemy{
             this.printInScreen();
         }
     }
+    shootEnemyPredefined(desviation){ // function just for predefined4 and predefinedIt features
+        if (desviation) {
+            bulletsEnemies.push(new Bullet(1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(0, 1, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(-1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(0, -1, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+        }
+        else {
+            bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+        }
+    }
     shootEnemy() {
-        let varX = window.innerWidth/2 - (this.x - pos00x);
-        let varY = window.innerHeight/2 - (this.y - pos00y);
-        let unitaryVect = unitVector(varX, varY);
-        bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                        this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color));
+        if (this.config.bConfig.predefined4) {
+            this.shootEnemyPredefined(false);
+        }
+        else if (this.config.bConfig.predefinedIt) {
+            if (this.iterationAlterner == 0) {
+                this.shootEnemyPredefined(false);
+                this.iterationAlterner = 1;
+            }
+            else {
+                this.shootEnemyPredefined(true);
+                this.iterationAlterner = 0;
+            }
+        }
+        else if (this.config.bConfig.doubleBullet) {
+            let varX = window.innerWidth/2 - (this.x - pos00x);
+            let varY = window.innerHeight/2 - (this.y - pos00y);
+            let unitaryVect = unitVector(varX, varY);
+            let normalVect1 = [-unitaryVect[1]*this.config.radiusBullets, unitaryVect[0]*this.config.radiusBullets];
+            let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig));
+        }
+        else if (this.config.bConfig.tripleBullet) {
+            let varX = window.innerWidth/2 - (this.x - pos00x);
+            let varY = window.innerHeight/2 - (this.y - pos00y);
+            let unitaryVect = unitVector(varX, varY);
+            let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 30);
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+        }
+        else if (this.config.bConfig.multi) {
+            let varX = window.innerWidth/2 - (this.x - pos00x);
+            let varY = window.innerHeight/2 - (this.y - pos00y);
+            let unitaryVect = unitVector(varX, varY);
+            let normalVect1 = [-unitaryVect[1]*this.config.radiusBullets, unitaryVect[0]*this.config.radiusBullets];
+            let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
+            // center
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig));
+            // laterals
+            let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 30);
+            bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+        }
+        else {
+            let varX = window.innerWidth/2 - (this.x - pos00x);
+            let varY = window.innerHeight/2 - (this.y - pos00y);
+            let unitaryVect = unitVector(varX, varY);
+            bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+        }
         this.lastShoot = performance.now();
     }
     tryShoot() {
@@ -393,9 +510,9 @@ class UserGame{
 // General Configuration
 
 var enemyConfiguration = {
-    "basic":{
+    "basicElementary":{
         lives: 5, // enemy lives
-        intervalShooting: 1300, // millisecond between every shoot
+        intervalShooting: 1500, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
@@ -404,11 +521,70 @@ var enemyConfiguration = {
         awardLives: 1, // lives given when enemy killed
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
-        imgSrc: "basicEnemy.png" // path to enemy image
+        imgSrc: "basicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
     },
-    "rare":{
+    "basicPredefined4":{
+        lives: 5, // enemy lives
+        intervalShooting: 1200, // millisecond between every shoot
+        bRange: 150, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 4, // speed of the bullets (in px / iteration)
+        awardXP: 100, // xp given when enemy killed
+        awardLives: 1, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#52B26A", // color of the bullet
+        imgSrc: "basicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: true, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "basicBigBalls":{
+        lives: 5, // enemy lives
+        intervalShooting: 2000, // millisecond between every shoot
+        bRange: 150, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 35, // size of the bullet
+        bulletEnemySpeed: 4, // speed of the bullets (in px / iteration)
+        awardXP: 100, // xp given when enemy killed
+        awardLives: 1, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#52B26A", // color of the bullet
+        imgSrc: "basicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "rareElementary":{
         lives: 10, // enemy lives
-        intervalShooting: 700, // millisecond between every shoot
+        intervalShooting: 750, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
@@ -417,34 +593,211 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 0, // shield given when killed
         color: "#005DAD", // color of the bullet
-        imgSrc: "rareEnemy.png" // path to enemy image
+        imgSrc: "rareEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
     },
-    "epic":{
+    "rarePredefinedIt":{
+        lives: 10, // enemy lives
+        intervalShooting: 1250, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 7, // speed of the bullets (in px / iteration)
+        awardXP: 300, // xp given when enemy killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#005DAD", // color of the bullet
+        imgSrc: "rareEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: true, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "rareDouble":{
+        lives: 10, // enemy lives
+        intervalShooting: 900, // millisecond between every shoot
+        bRange: 150, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 9, // speed of the bullets (in px / iteration)
+        awardXP: 300, // xp given when enemy killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 0, // shield given when killed
+        color: "#005DAD", // color of the bullet
+        imgSrc: "rareEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: true, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "epicElementary":{
         lives: 25, // enemy lives
-        intervalShooting: 300, // millisecond between every shoot
+        intervalShooting: 400, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
         awardXP: 500, // xp given when enemy killed
-        awardLives: 3, // lives given when enemy killed
-        awardShield: 2, // shield given when killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "epicEnemy.png" // path to enemy image
+        imgSrc: "epicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
     },
-    "legendary":{
+    "epicTriple":{
+        lives: 25, // enemy lives
+        intervalShooting: 600, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
+        awardXP: 500, // xp given when enemy killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 3, // shield given when killed
+        color: "#9847FE", // color of the bullet
+        imgSrc: "epicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: true, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "epicWalltravesser":{
+        lives: 25, // enemy lives
+        intervalShooting: 500, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
+        awardXP: 500, // xp given when enemy killed
+        awardLives: 2, // lives given when enemy killed
+        awardShield: 3, // shield given when killed
+        color: "#9847FE", // color of the bullet
+        imgSrc: "epicEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: true, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "legendaryElementary":{
         lives: 50, // enemy lives
-        intervalShooting: 100, // millisecond between every shoot
+        intervalShooting: 150, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 15, // speed of the bullets (in px / iteration)
         awardXP: 1000, // xp given when enemy killed
-        awardLives: 5, // lives given when enemy killed
-        awardShield: 5, // shield given when killed
+        awardLives: 10, // lives given when enemy killed
+        awardShield: 10, // shield given when killed
         color: "#FFD658", // color of the bullet
-        imgSrc: "legendaryEnemy.png" // path to enemy image
-    }
+        imgSrc: "legendaryEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "legendaryMulti":{
+        lives: 50, // enemy lives
+        intervalShooting: 500, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 15, // speed of the bullets (in px / iteration)
+        awardXP: 1000, // xp given when enemy killed
+        awardLives: 10, // lives given when enemy killed
+        awardShield: 10, // shield given when killed
+        color: "#FFD658", // color of the bullet
+        imgSrc: "legendaryEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: true, // shoots 4 bullets
+            presuit: false // bullets presuit canon
+        }
+    },
+    "legendaryPresuit":{
+        lives: 50, // enemy lives
+        intervalShooting: 750, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 40, // radius of the enemy
+        radiusBullets: 15, // size of the bullet
+        bulletEnemySpeed: 6, // speed of the bullets (in px / iteration)
+        awardXP: 1000, // xp given when enemy killed
+        awardLives: 10, // lives given when enemy killed
+        awardShield: 10, // shield given when killed
+        color: "#FFD658", // color of the bullet
+        imgSrc: "legendaryEnemy.png", // path to enemy image
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: false, // bullets can go through walls
+            multi: false,
+            presuit: true // bullets presuit canon
+        }
+    },
 }
 
 var enemies = [];
@@ -493,10 +846,18 @@ const OPTIONS = {
 }
 
 const ENEMY_OPTIONS = {
-    NUM_ENEMIES_BASIC: 120,
-    NUM_ENEMIES_RARE: 50,
-    NUM_ENEMIES_EPIC: 10,
-    NUM_ENEMIES_LEGENDARY: 3,
+    NUM_ENEMIES_BASIC_ELEMENTARY: 17,
+    NUM_ENEMIES_BASIC_PREDEFINED4: 17,
+    NUM_ENEMIES_BASIC_BIGBALL: 17,
+    NUM_ENEMIES_RARE_ELEMENTARY: 8,
+    NUM_ENEMIES_RARE_DOUBLE: 8,
+    NUM_ENEMIES_RARE_PREDEFINEDIT: 8,
+    NUM_ENEMIES_EPIC_ELEMENTARY: 3,
+    NUM_ENEMIES_EPIC_WALLTRAVESSER: 3,
+    NUM_ENEMIES_EPIC_TRIPLE: 3,
+    NUM_ENEMIES_LEGENDARY_ELEMENTARY: 1,
+    NUM_ENEMIES_LEGENDARY_PRESUIT: 1,
+    NUM_ENEMIES_LEGENDARY_MULTI: 1,
 }
 
 var mainCanon = new Canon();
@@ -515,7 +876,6 @@ window.addEventListener("keydown", e => {
     else if (e.key == "ArrowDown" || e.key == "s") keyController.down = true;
     else if (e.key == "ArrowRight" || e.key == "d") keyController.right = true;
     else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = true;
-    console.log(e.key)
 })
 window.addEventListener("keyup", e => {
     if (e.key == "ArrowUp" || e.key == "w") keyController.up = false;
@@ -523,6 +883,13 @@ window.addEventListener("keyup", e => {
     else if (e.key == "ArrowRight" || e.key == "d") keyController.right = false;
     else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = false;
 })
+
+window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
+                                                                // al hacer click derecho, cosa que hace que
+                                                                // keyController funcione correctamente
+                                                                // (sin esto, si tienes clickado una tecla y 
+                                                                // haces doble click derecho y levantas la tecla
+                                                                // keyController sigue a true)
 
 // Create Walls
 
@@ -566,17 +933,41 @@ function spawnNewEnemy(typeE){
     }
 }
 function iniEnemies() {
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_BASIC; ++i) {
-        spawnNewEnemy("basic");
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_BASIC_ELEMENTARY; ++i) {
+        spawnNewEnemy("basicElementary");
     }
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_RARE; ++i) {
-        spawnNewEnemy("rare");
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_BASIC_PREDEFINED4; ++i) {
+        spawnNewEnemy("basicPredefined4");
     }
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_EPIC; ++i) {
-        spawnNewEnemy("epic");
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_BASIC_BIGBALL; ++i) {
+        spawnNewEnemy("basicBigBalls");
     }
-    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY; ++i) {
-        spawnNewEnemy("legendary");
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_RARE_ELEMENTARY; ++i) {
+        spawnNewEnemy("rareElementary");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_RARE_PREDEFINEDIT; ++i) {
+        spawnNewEnemy("rarePredefinedIt");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_RARE_DOUBLE; ++i) {
+        spawnNewEnemy("rareDouble");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_EPIC_ELEMENTARY; ++i) {
+        spawnNewEnemy("epicElementary");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_EPIC_TRIPLE; ++i) {
+        spawnNewEnemy("epicTriple");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_EPIC_WALLTRAVESSER; ++i) {
+        spawnNewEnemy("epicWalltravesser");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY_ELEMENTARY; ++i) {
+        spawnNewEnemy("legendaryElementary");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY_MULTI; ++i) {
+        spawnNewEnemy("legendaryMulti");
+    }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY_PRESUIT; ++i) {
+        spawnNewEnemy("legendaryPresuit");
     }
 }
 
@@ -621,7 +1012,7 @@ function movePoint(){
     for (let i = 0; i < walls.length; ++i) {
         walls[i].move(mx, my);
         for (let j = 0; j < bulletsEnemies.length; ++j) {
-            if (detectCircleLineCollision(walls[i].x0, walls[i].y0, walls[i].x1, walls[i].y1, bulletsEnemies[j].x+pos00x, bulletsEnemies[j].y+pos00y, bulletsEnemies[j].radius).collision) {
+            if (!bulletsEnemies[j].enemyConfig.wallTravesser && detectCircleLineCollision(walls[i].x0, walls[i].y0, walls[i].x1, walls[i].y1, bulletsEnemies[j].x+pos00x, bulletsEnemies[j].y+pos00y, bulletsEnemies[j].radius).collision) {
                 // remove enemy bullet
                 bulletsEnemies.splice(j, 1);
                 --j;
