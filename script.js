@@ -673,9 +673,13 @@ class Droplet{
         c.font = "bold 15px Raleway";
         c.textAlign = "center";
         c.fillText(`${this.dataDroplet.name}`, this.x-pos00x, this.y-pos00y+this.radius+10);
+        c.fillStyle = this.dataDroplet.shadowColor;
+        c.font = "bold italic 12.5px Raleway";
+        c.fillText(`${this.dataDroplet.statusRank}`, this.x-pos00x, this.y-pos00y+this.radius+25);
+        c.fillStyle = "black";
         c.font = "12.5px Raleway";
-        c.fillText(`Daño por Disparo: ${this.dataDroplet.damage*this.dataDroplet.numBalls}`, this.x-pos00x, this.y-pos00y+this.radius+30);
-        c.fillText(`Tiempo de Carga: ${this.dataDroplet.iShoot/1000} segundos`, this.x-pos00x, this.y-pos00y+this.radius+45);
+        c.fillText(`Daño por Disparo: ${this.dataDroplet.damage*this.dataDroplet.numBalls}`, this.x-pos00x, this.y-pos00y+this.radius+40);
+        c.fillText(`Tiempo de Carga: ${this.dataDroplet.iShoot/1000} segundos`, this.x-pos00x, this.y-pos00y+this.radius+55);
         c.restore();
     }
     printInScreen(){
@@ -735,6 +739,7 @@ var dropletData = {
     },
     "basic1":{
         name: "Fusil Semiautomático",
+        statusRank: "Común",
         iShoot: 600, // in ms
         damage: 5,
         numBalls: 1,
@@ -748,6 +753,7 @@ var dropletData = {
     },
     "basic2":{
         name: "Francotirador de Media Distáncia",
+        statusRank: "Común",
         iShoot: 2000, // in ms
         damage: 15,
         numBalls: 1,
@@ -761,6 +767,7 @@ var dropletData = {
     },
     "basic3":{
         name: "Pistola de Combate",
+        statusRank: "Común",
         iShoot: 1000, // in ms
         damage: 10,
         numBalls: 1,
@@ -774,6 +781,7 @@ var dropletData = {
     },
     "basic4":{ // TODO MULTISHOOT
         name: "Escopeta Corredera Angular",
+        statusRank: "Común",
         iShoot: 1500, // in ms
         damage: 10,
         numBalls: 3,
@@ -787,6 +795,7 @@ var dropletData = {
     },
     "rare1":{
         name: "Pistola Centinela de Corta Distáncia",
+        statusRank: "Raro",
         iShoot: 750, // in ms
         damage: 9,
         numBalls: 1,
@@ -800,6 +809,7 @@ var dropletData = {
     },
     "rare2":{
         name: "Repulsor Táctico",
+        statusRank: "Raro",
         iShoot: 1500, // in ms
         damage: 8,
         numBalls: 7,
@@ -813,6 +823,7 @@ var dropletData = {
     },
     "rare3":{
         name: "Mortero",
+        statusRank: "Raro",
         iShoot: 1500, // in ms
         damage: 20,
         numBalls: 1,
@@ -826,6 +837,7 @@ var dropletData = {
     },
     "epic1":{ // TODO MULTISHOOT
         name: "Escopeta Bélica de Corta Distáncia",
+        statusRank: "Epico",
         iShoot: 1000, // in ms
         damage: 30,
         numBalls: 3,
@@ -839,6 +851,7 @@ var dropletData = {
     },
     "epic2":{
         name: "Francotirador de Larga Distáncia",
+        statusRank: "Epico",
         iShoot: 900, // in ms
         damage: 50,
         numBalls: 1,
@@ -852,6 +865,7 @@ var dropletData = {
     },
     "epic3":{
         name: "Barrilete",
+        statusRank: "Epico",
         iShoot: 1000, // in ms
         damage: 100,
         numBalls: 1,
@@ -865,6 +879,7 @@ var dropletData = {
     },
     "legendary1":{
         name: "Pistola Imperial",
+        statusRank: "Legendario",
         iShoot: 500, // in ms
         damage: 40,
         numBalls: 1,
@@ -878,6 +893,7 @@ var dropletData = {
     },
     "legendary2":{
         name: "Minigun",
+        statusRank: "Legendario",
         iShoot: 150, // in ms
         damage: 10,
         numBalls: 1,
@@ -891,6 +907,7 @@ var dropletData = {
     },
     "legendary3":{ // TODO MULTISHOOT
         name: "Escopeta Bélica de Asalto",
+        statusRank: "Legendario",
         iShoot: 1250, // in ms
         damage: 20,
         numBalls: 8,
