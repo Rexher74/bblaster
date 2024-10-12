@@ -351,6 +351,7 @@ class Enemy{
         this.config = enemyConfiguration[type];
         this.iterationAlterner = 0; // just useful if predefinedIt feature of this.config is true
         this.lives = this.config.lives;
+        this.livesAnimation = this.config.lives;
         this.iniLives = this.config.lives;
         this.lastShoot = performance.now();
         this.baseImage = new Image();
@@ -369,6 +370,9 @@ class Enemy{
         }
     }
     printInScreen(){
+        if (this.livesAnimation > this.lives) {
+            this.livesAnimation--;
+        }
         // print enemy
         c.drawImage(this.baseImage, this.x-pos00x-this.config.radius, this.y-pos00y-this.config.radius,
             this.config.radius*2, this.config.radius*2);
@@ -381,7 +385,7 @@ class Enemy{
 
         // lives
         c.beginPath();
-        c.rect(startX, startY, 2*this.config.radius*(this.lives/this.iniLives), 10); // 10 is the height of the lives rectangle
+        c.rect(startX, startY, 2*this.config.radius*(this.livesAnimation/this.iniLives), 10); // 10 is the height of the lives rectangle
         c.fill();
     }
     move(dx, dy) {
@@ -1322,7 +1326,7 @@ window.addEventListener("keyup", e => {
     else if (e.code == "ArrowLeft" || e.code == "KeyA") keyController.left = false;
 })
 
-//window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
+window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
                                                                 // al hacer click derecho, cosa que hace que
                                                                 // keyController funcione correctamente
                                                                 // (sin esto, si tienes clickado una tecla y 
