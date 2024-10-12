@@ -5,8 +5,6 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var c = canvas.getContext("2d");
-c.lineWidth = 10;
-c.shadowColor = "black";
 
 // Utilities
 
@@ -214,6 +212,8 @@ class Wall{
     printInScreen() {
         if (this.limit) {
             c.save();
+            c.lineWidth = 10;
+            c.shadowColor = "black";
             c.shadowBlur = 20;
             c.beginPath();
             c.moveTo(this.x0-pos00x, this.y0-pos00y);
@@ -222,21 +222,29 @@ class Wall{
             c.restore();
         }
         else {
+            c.save();
+            c.lineWidth = 10;
+            c.shadowColor = "black";
             c.beginPath();
             c.moveTo(this.x0-pos00x, this.y0-pos00y);
             c.lineTo(this.x1-pos00x, this.y1-pos00y);
             c.stroke();
+            c.restore();
         }
     }
 }
 
 class Canon{
-    constructor(){
-        this.bulletSize = 15;
+    constructor(startingTank){
+        this.tank = startingTank;
+        this.canonData = dropletData[startingTank];
+        this.bulletSize = this.canonData.size;
+        this.bulletRange = this.canonData.rangeB;
+        this.bulletSpeed = this.canonData.speed;
+        this.intervalShooting = this.canonData.iShoot; // in milliseconds
+        this.damage = this.canonData.damage;
+        imageCanon.src = this.canonData.image;
         this.bulletArray = [];
-        this.bulletRange = 60;
-        this.bulletSpeed = 7;
-        this.intervalShooting = 300; // in milliseconds
         this.lastShoot = performance.now()-this.intervalShooting;
     }
     shoot(ex, ey) {
@@ -244,14 +252,61 @@ class Canon{
             let varXPos = ex - window.innerWidth/2;
             let varYPos = ey - window.innerHeight/2;
             let unitaryVect = unitVector(varXPos, varYPos);
-            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined));
+            if (this.canonData.numBalls > 1) { // multishoot
+                // shoot center bullets
+                if (this.canonData.centerBalls%2 == 0) {
+                    let normalVect1 = [-unitaryVect[1]*this.bulletSize*2, unitaryVect[0]*this.bulletSize*2];
+                    let normalVect2 = [unitaryVect[1]*this.bulletSize*2, -unitaryVect[0]*this.bulletSize*2];
+                    let constHalfVariation1 = [-unitaryVect[1]*this.bulletSize, unitaryVect[0]*this.bulletSize];
+                    let constHalfVariation2 = [unitaryVect[1]*this.bulletSize, -unitaryVect[0]*this.bulletSize];
+                    for (let i = 0; i < this.canonData.centerBalls/2; ++i) {
+                        this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2+i*normalVect1[0]+constHalfVariation1[0], window.innerHeight/2+i*normalVect1[1]+constHalfVariation1[1], this.bulletRange, "black", undefined, this.damage));
+                        this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2+i*normalVect2[0]+constHalfVariation2[0], window.innerHeight/2+i*normalVect2[1]+constHalfVariation2[1], this.bulletRange, "black", undefined, this.damage));
+                    }
+                }
+                else {
+                    this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined, this.damage));
+                    if (this.canonData.centerBalls > 1) {
+                        let normalVect1 = [-unitaryVect[1]*this.bulletSize*2, unitaryVect[0]*this.bulletSize*2];
+                        let normalVect2 = [unitaryVect[1]*this.bulletSize*2, -unitaryVect[0]*this.bulletSize*2];
+                        for (let i = 1; i < this.canonData.centerBalls/2; ++i) {
+                            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2+i*normalVect1[0], window.innerHeight/2+i*normalVect1[1], this.bulletRange, "black", undefined, this.damage));
+                            this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2+i*normalVect2[0], window.innerHeight/2+i*normalVect2[1], this.bulletRange, "black", undefined, this.damage));
+                        }
+                    }
+                }
+                // shoot leteral balls
+                let angularBullets = this.canonData.numBalls - this.canonData.centerBalls;
+                if (angularBullets > 0) { // angularBullets tiene que ser par
+                    let vectorCuadrante = angularBullets/2;
+                    let anguloDivision = this.canonData.angularDivision/(vectorCuadrante+1);
+                    for (let i = 0; i < vectorCuadrante; ++i) {
+                        let res = rotarVectorGrados(unitaryVect, anguloDivision+i*anguloDivision);
+                        this.bulletArray.push(new Bullet(res.derecha[0], res.derecha[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined, this.damage));
+                        this.bulletArray.push(new Bullet(res.izquierda[0], res.izquierda[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined, this.damage));
+                    }
+                }
+            }
+            else { // normal shoot
+                this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined, this.damage));
+            }
             this.lastShoot = performance.now();
         }
+    }
+    changeCanon(type) {
+        this.tank = type;
+        this.canonData = dropletData[type];
+        this.bulletSize = this.canonData.size;
+        this.bulletRange = this.canonData.rangeB;
+        this.bulletSpeed = this.canonData.speed;
+        this.intervalShooting = this.canonData.iShoot; // in milliseconds
+        this.damage = this.canonData.damage;
+        imageCanon.src = this.canonData.image;
     }
 }
 
 class Bullet{
-    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet, color, eConfig) {
+    constructor(dirX, dirY, radius, bulletSpeed, iniX, iniY, rangeBullet, color, eConfig, damage) {
         this.x = iniX;
         this.y = iniY;
         this.color = color;
@@ -261,6 +316,7 @@ class Bullet{
         this.directionY = dirY*bulletSpeed;
         this.counterIterations = rangeBullet;
         this.enemyConfig = eConfig;
+        this.damage = damage;
     }
     update() {
         c.save();
@@ -273,6 +329,8 @@ class Bullet{
         c.restore();
     }
     move(extraX, extraY){
+        c.save();
+        c.shadowBlur = 10;
         if (this.enemyConfig && this.enemyConfig.presuit) {
             let unitaryVect = unitVector(window.innerWidth/2-this.x, window.innerHeight/2-this.y);
             this.directionX = unitaryVect[0]*this.bulletSpeed;
@@ -282,6 +340,7 @@ class Bullet{
         this.y += (this.directionY+extraY);
         --this.counterIterations;
         this.update();
+        c.restore();
     }
 }
 
@@ -335,23 +394,23 @@ class Enemy{
     shootEnemyPredefined(desviation){ // function just for predefined4 and predefinedIt features
         if (desviation) {
             bulletsEnemies.push(new Bullet(1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(0, 1, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(-1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(0, -1, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
         else {
             bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
     }
     shootEnemy() {
@@ -375,9 +434,9 @@ class Enemy{
             let normalVect1 = [-unitaryVect[1]*this.config.radiusBullets, unitaryVect[0]*this.config.radiusBullets];
             let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
         else if (this.config.bConfig.tripleBullet) {
             let varX = window.innerWidth/2 - (this.x - pos00x);
@@ -385,11 +444,11 @@ class Enemy{
             let unitaryVect = unitVector(varX, varY);
             let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 30);
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
         else if (this.config.bConfig.multi) {
             let varX = window.innerWidth/2 - (this.x - pos00x);
@@ -399,22 +458,22 @@ class Enemy{
             let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
             // center
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
             // laterals
             let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 20);
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
         else {
             let varX = window.innerWidth/2 - (this.x - pos00x);
             let varY = window.innerHeight/2 - (this.y - pos00y);
             let unitaryVect = unitVector(varX, varY);
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
         }
         this.lastShoot = performance.now();
     }
@@ -424,6 +483,10 @@ class Enemy{
             this.shootEnemy();
         }
     }
+    reduceLives(amount) {
+        this.lives -= amount;
+    }
+    
 }
 
 class UserGame{
@@ -434,8 +497,31 @@ class UserGame{
         this.baseShield = base_shield;
         this.XP = 0;
         this.eRemaining = eTotal;
+        this.iterationsDamage = 0;
+        this.animationLives = lives;
+        this.animationShield = 0;
     }
     printData(){
+        if (this.iterationsDamage > 0) {
+            this.printCircleDamage();
+            --this.iterationsDamage;
+        }
+        if (this.animationLives != this.lives) {
+            if (this.lives > this.animationLives) {
+                ++this.animationLives;
+            }
+            else {
+                --this.animationLives;
+            }
+        }
+        if (this.animationShield != this.shield) {
+            if (this.shield > this.animationShield) {
+                ++this.animationShield;
+            }
+            else {
+                --this.animationShield;
+            }
+        }
         this.printLives();
         this.printShield();
         this.printXP();
@@ -444,7 +530,7 @@ class UserGame{
     printEnemiesRemaining(){
         c.save();
         c.font = "bold 15px Raleway"
-        c.fillText(`Enemies Remaining: ${this.eRemaining}`, 10, 20); // position (20, 20) px
+        c.fillText(`Enemies Remaining: ${this.eRemaining}`, 10, 20); // position (10, 20) px
         c.restore();
     }
     printLives(){
@@ -455,9 +541,9 @@ class UserGame{
         c.beginPath();
         c.rect(window.innerWidth*7/16, 40, window.innerWidth*2/16, 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.stroke();
-        c.lineWidth = "0";
+        c.lineWidth = 0;
         c.beginPath();
-        c.rect(window.innerWidth*7/16, 40, (window.innerWidth*2/16)*(this.lives/this.baseLives), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
+        c.rect(window.innerWidth*7/16, 40, (window.innerWidth*2/16)*(this.animationLives/this.baseLives), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.fill();
         c.restore();
     }
@@ -469,9 +555,9 @@ class UserGame{
         c.beginPath();
         c.rect(window.innerWidth*7/16, 20, window.innerWidth*2/16, 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.stroke();
-        c.lineWidth = "0";
+        c.lineWidth = 0;
         c.beginPath();
-        c.rect(window.innerWidth*7/16, 20, (window.innerWidth*2/16)*(this.shield/this.baseShield), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
+        c.rect(window.innerWidth*7/16, 20, (window.innerWidth*2/16)*(this.animationShield/this.baseShield), 10); // 20 is the margin to the top of the screen. 15 is the height of the bar
         c.fill();
         c.restore();
     }
@@ -482,7 +568,18 @@ class UserGame{
         c.fillText(`${this.XP} xp`, window.innerWidth/2, window.innerHeight-20); // 20 is a margin
         c.restore();
     }
+    printCircleDamage(){
+        c.save();
+        c.fillStyle = "rgba(255, 0, 0, 0.1)";
+        c.shadowBlur = 20;
+        c.shadowColor = "rgba(255, 0, 0, 0.1)";
+        c.beginPath();
+        c.arc(window.innerWidth/2, window.innerHeight/2, 1.75*RADIUS_TANK, 0, 2*Math.PI);
+        c.fill();
+        c.restore();
+    }
     makeDamage(amount) {
+        this.printCircleDamage();
         if (this.shield >= amount) {
             this.reduceShield(amount);
         }
@@ -505,17 +602,23 @@ class UserGame{
     increaseLives(amount){
         if (this.lives+amount <= this.baseLives) {
             this.lives += amount;
+            return true;
         }
         else {
+            if (this.lives == this.baseLives) return false;
             this.lives = this.baseLives;
+            return true;
         }
     }
     increaseShield(amount){
         if (this.shield+amount <= this.baseShield) {
             this.shield += amount;
+            return true;
         }
         else {
+            if (this.shield == this.baseShield) return false;
             this.shield = this.baseShield;
+            return true;
         }
     }
     increaseXP(amount){
@@ -533,12 +636,267 @@ class UserGame{
     }
 }
 
+class Droplet{
+    constructor(x, y, type){
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.isTank = (type != "lives" && type != "shield");
+        this.dataDroplet = dropletData[type];
+        this.baseImage = new Image();
+        this.baseImage.src = this.dataDroplet.image;
+        if (this.isTank) {
+            this.radius = RADIUS_DROPLET;
+        }
+        else {
+            this.radius = RADIUS_DROPLET_OTHER;
+        }
+    }
+    inScreen(){
+        if (this.x-pos00x > -this.radius
+            && this.x-pos00x < window.innerWidth+this.radius
+            && this.y-pos00y > -this.radius
+            && this.y-pos00y < window.innerHeight+this.radius
+        ) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    printDropletData(){
+        c.save();
+        c.font = "bold 15px Raleway";
+        c.textAlign = "center";
+        c.fillText(`${this.dataDroplet.name}`, this.x-pos00x, this.y-pos00y+this.radius+10);
+        c.font = "12.5px Raleway";
+        c.fillText(`Daño por Disparo: ${this.dataDroplet.damage*this.dataDroplet.numBalls}`, this.x-pos00x, this.y-pos00y+this.radius+30);
+        c.fillText(`Tiempo de Carga: ${this.dataDroplet.iShoot/1000} segundos`, this.x-pos00x, this.y-pos00y+this.radius+45);
+        c.restore();
+    }
+    printInScreen(){
+        // print droplet
+        c.save();
+        c.shadowBlur = 30;
+        c.shadowColor = this.dataDroplet.shadowColor;
+        c.drawImage(this.baseImage, this.x-pos00x-this.radius, this.y-pos00y-this.radius,
+            this.radius*2, this.radius*2);
+        c.restore();
+        if (this.isTank) {
+            let distanceToMainTank = Math.sqrt(Math.pow(this.x-pos00x-this.radius-innerWidth/2, 2)+Math.pow(this.y-pos00y-this.radius-window.innerHeight/2, 2));
+            if (distanceToMainTank < DISTANCE_SHOW_DROPLET_DETAILS) {
+                this.printDropletData()
+            }
+        }
+    }
+    move(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+        if (this.inScreen()) {
+            this.printInScreen();
+        }
+    }
+    use(){
+        if (this.isTank) {
+            // TO DO
+            return true;
+        }
+        else {
+            if (this.type == "lives") {
+                return User.increaseLives(10);
+            }
+            else {
+                return User.increaseShield(10);
+            }
+        }
+    }
+    
+}
 
 // General Configuration
 
+const RADIUS_DROPLET = 40;
+const RADIUS_DROPLET_OTHER = 30;
+
+const DISTANCE_SHOW_DROPLET_DETAILS = 200;
+
+var dropletData = {
+    "lives":{
+        shadowColor: "#d76161",
+        image: "./other/lives.png"
+    },
+    "shield":{
+        shadowColor: "#99b4f7",
+        image: "./other/shield.png"
+    },
+    "basic1":{
+        name: "Fusil Semiautomático",
+        iShoot: 600, // in ms
+        damage: 5,
+        numBalls: 1,
+        speed: 10,
+        rangeB: 60,
+        size: 15,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/basic1.png",
+        shadowColor: "#575757"
+    },
+    "basic2":{
+        name: "Francotirador de Media Distáncia",
+        iShoot: 2000, // in ms
+        damage: 15,
+        numBalls: 1,
+        speed: 15,
+        rangeB: 60,
+        size: 8,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/basic2.png",
+        shadowColor: "#575757"
+    },
+    "basic3":{
+        name: "Pistola de Combate",
+        iShoot: 1000, // in ms
+        damage: 10,
+        numBalls: 1,
+        speed: 12,
+        rangeB: 55,
+        size: 15,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/basic3.png",
+        shadowColor: "#575757"
+    },
+    "rare1":{
+        name: "Pistola Centinela de Corta Distáncia",
+        iShoot: 750, // in ms
+        damage: 9,
+        numBalls: 1,
+        speed: 10,
+        rangeB: 40,
+        size: 15,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/rare1.png",
+        shadowColor: "#6a94a4"
+    },
+    "rare2":{ // TODO MULTISHOOT
+        name: "Escopeta Corredera Angular",
+        iShoot: 1500, // in ms
+        damage: 10,
+        numBalls: 3,
+        speed: 10,
+        rangeB: 45,
+        size: 13,
+        centerBalls: 1, // just useful if numBalls > 1
+        angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/rare2.png",
+        shadowColor: "#6a94a4"
+    },
+    "rare3":{
+        name: "Mortero",
+        iShoot: 1500, // in ms
+        damage: 20,
+        numBalls: 1,
+        speed: 5,
+        rangeB: 120,
+        size: 30,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/rare3.png",
+        shadowColor: "#6a94a4"
+    },
+    "epic1":{ // TODO MULTISHOOT
+        name: "Escopeta Bélica de Corta Distáncia",
+        iShoot: 1000, // in ms
+        damage: 30,
+        numBalls: 3,
+        speed: 14,
+        rangeB: 20,
+        size: 8,
+        centerBalls: 3, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/epic1.png",
+        shadowColor: "#6942b5"
+    },
+    "epic2":{
+        name: "Francotirador de Larga Distáncia",
+        iShoot: 900, // in ms
+        damage: 50,
+        numBalls: 1,
+        speed: 15,
+        rangeB: 100,
+        size: 8,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/epic2.png",
+        shadowColor: "#6942b5"
+    },
+    "epic3":{
+        name: "Barrilete",
+        iShoot: 1000, // in ms
+        damage: 100,
+        numBalls: 1,
+        speed: 5,
+        rangeB: 20,
+        size: 25,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/epic3.png",
+        shadowColor: "#6942b5"
+    },
+    "legendary1":{
+        name: "Pistola Imperial",
+        iShoot: 500, // in ms
+        damage: 40,
+        numBalls: 1,
+        speed: 17,
+        rangeB: 40,
+        size: 13,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/legendary1.png",
+        shadowColor: "#912a2b"
+    },
+    "legendary2":{
+        name: "Minigun",
+        iShoot: 150, // in ms
+        damage: 10,
+        numBalls: 1,
+        speed: 10,
+        rangeB: 60,
+        size: 15,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/legendary2.png",
+        shadowColor: "#912a2b"
+    },
+    "legendary3":{ // TODO MULTISHOOT
+        name: "Escopeta Bélica de Asalto",
+        iShoot: 1250, // in ms
+        damage: 20,
+        numBalls: 8,
+        speed: 10,
+        rangeB: 80,
+        size: 6,
+        centerBalls: 2, // just useful if numBalls > 1
+        angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/legendary3.png",
+        shadowColor: "#912a2b"
+    },
+}
+
+var numTanksByType = {
+    "basic":3,
+    "rare":3,
+    "epic":3,
+    "legendary":3
+}
+
 var enemyConfiguration = {
     "basicElementary":{
-        lives: 5, // enemy lives
+        lives: 50, // enemy lives
         intervalShooting: 1500, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -549,6 +907,7 @@ var enemyConfiguration = {
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
         imgSrc: "./enemies/basicEnemy1.png", // path to enemy image
+        spawningChance: [0.75, 0.23, 0.015, 0.005], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -562,7 +921,7 @@ var enemyConfiguration = {
         }
     },
     "basicPredefined4":{
-        lives: 5, // enemy lives
+        lives: 50, // enemy lives
         intervalShooting: 1000, // millisecond between every shoot
         bRange: 150, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -573,6 +932,7 @@ var enemyConfiguration = {
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
         imgSrc: "./enemies/basicEnemy2.png", // path to enemy image
+        spawningChance: [0.75, 0.24, 0.015, 0.005], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -586,7 +946,7 @@ var enemyConfiguration = {
         }
     },
     "basicBigBalls":{
-        lives: 5, // enemy lives
+        lives: 50, // enemy lives
         intervalShooting: 2000, // millisecond between every shoot
         bRange: 150, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -597,6 +957,7 @@ var enemyConfiguration = {
         awardShield: 0, // shield given when killed
         color: "#52B26A", // color of the bullet
         imgSrc: "./enemies/basicEnemy3.png", // path to enemy image
+        spawningChance: [0.75, 0.24, 0.015, 0.005], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -610,7 +971,7 @@ var enemyConfiguration = {
         }
     },
     "rareElementary":{
-        lives: 10, // enemy lives
+        lives: 100, // enemy lives
         intervalShooting: 750, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -621,6 +982,7 @@ var enemyConfiguration = {
         awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
         imgSrc: "./enemies/rareEnemy1.png", // path to enemy image
+        spawningChance: [0.4, 0.55, 0.03, 0.02], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -634,7 +996,7 @@ var enemyConfiguration = {
         }
     },
     "rarePredefinedIt":{
-        lives: 10, // enemy lives
+        lives: 100, // enemy lives
         intervalShooting: 1250, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -645,6 +1007,7 @@ var enemyConfiguration = {
         awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
         imgSrc: "./enemies/rareEnemy2.png", // path to enemy image
+        spawningChance: [0.4, 0.55, 0.03, 0.02], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -658,7 +1021,7 @@ var enemyConfiguration = {
         }
     },
     "rareDouble":{
-        lives: 10, // enemy lives
+        lives: 100, // enemy lives
         intervalShooting: 900, // millisecond between every shoot
         bRange: 150, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -669,6 +1032,7 @@ var enemyConfiguration = {
         awardShield: 1, // shield given when killed
         color: "#005DAD", // color of the bullet
         imgSrc: "./enemies/rareEnemy3.png", // path to enemy image
+        spawningChance: [0.4, 0.55, 0.03, 0.02], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -682,7 +1046,7 @@ var enemyConfiguration = {
         }
     },
     "epicElementary":{
-        lives: 25, // enemy lives
+        lives: 250, // enemy lives
         intervalShooting: 400, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -693,6 +1057,7 @@ var enemyConfiguration = {
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
         imgSrc: "./enemies/epicEnemy1.png", // path to enemy image
+        spawningChance: [0.2, 0.5, 0.2, 0.1], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -706,8 +1071,8 @@ var enemyConfiguration = {
         }
     },
     "epicTriple":{
-        lives: 25, // enemy lives
-        intervalShooting: 600, // millisecond between every shoot
+        lives: 250, // enemy lives
+        intervalShooting: 750, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
@@ -716,7 +1081,8 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "./enemies/epicEnemy2.png", // path to enemy image
+        imgSrc: "./enemies/epicEnemy3.png", // path to enemy image
+        spawningChance: [0.2, 0.5, 0.2, 0.1], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -730,7 +1096,7 @@ var enemyConfiguration = {
         }
     },
     "epicWalltravesser":{
-        lives: 25, // enemy lives
+        lives: 250, // enemy lives
         intervalShooting: 500, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
@@ -740,7 +1106,8 @@ var enemyConfiguration = {
         awardLives: 2, // lives given when enemy killed
         awardShield: 3, // shield given when killed
         color: "#9847FE", // color of the bullet
-        imgSrc: "./enemies/epicEnemy3.png", // path to enemy image
+        imgSrc: "./enemies/epicEnemy2.png", // path to enemy image
+        spawningChance: [0.2, 0.5, 0.2, 0.1], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -754,17 +1121,18 @@ var enemyConfiguration = {
         }
     },
     "legendaryElementary":{
-        lives: 50, // enemy lives
+        lives: 500, // enemy lives
         intervalShooting: 150, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 15, // speed of the bullets (in px / iteration)
         awardXP: 1000, // xp given when enemy killed
-        awardLives: 10, // lives given when enemy killed
-        awardShield: 10, // shield given when killed
+        awardLives: 6, // lives given when enemy killed
+        awardShield: 6, // shield given when killed
         color: "#FFD658", // color of the bullet
         imgSrc: "./enemies/legendaryEnemy1.png", // path to enemy image
+        spawningChance: [0.05, 0.15, 0.5, 0.3], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -778,17 +1146,18 @@ var enemyConfiguration = {
         }
     },
     "legendaryMulti":{
-        lives: 50, // enemy lives
-        intervalShooting: 500, // millisecond between every shoot
+        lives: 500, // enemy lives
+        intervalShooting: 600, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
         bulletEnemySpeed: 15, // speed of the bullets (in px / iteration)
         awardXP: 1000, // xp given when enemy killed
-        awardLives: 10, // lives given when enemy killed
-        awardShield: 10, // shield given when killed
+        awardLives: 6, // lives given when enemy killed
+        awardShield: 6, // shield given when killed
         color: "#FFD658", // color of the bullet
         imgSrc: "./enemies/legendaryEnemy2.png", // path to enemy image
+        spawningChance: [0.05, 0.15, 0.5, 0.3], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -802,17 +1171,18 @@ var enemyConfiguration = {
         }
     },
     "legendaryPresuit":{
-        lives: 50, // enemy lives
+        lives: 500, // enemy lives
         intervalShooting: 750, // millisecond between every shoot
         bRange: 200, // iterations of the bullet
         radius: 40, // radius of the enemy
         radiusBullets: 15, // size of the bullet
-        bulletEnemySpeed: 10, // speed of the bullets (in px / iteration)
+        bulletEnemySpeed: 9, // speed of the bullets (in px / iteration)
         awardXP: 1000, // xp given when enemy killed
-        awardLives: 10, // lives given when enemy killed
-        awardShield: 10, // shield given when killed
+        awardLives: 6, // lives given when enemy killed
+        awardShield: 6, // shield given when killed
         color: "#FFD658", // color of the bullet
         imgSrc: "./enemies/legendaryEnemy3.png", // path to enemy image
+        spawningChance: [0.05, 0.15, 0.5, 0.3], // basic, rare, epic, legendary
 
         // habilities
         bConfig: {
@@ -827,8 +1197,13 @@ var enemyConfiguration = {
     },
 }
 
+var dropletsOther = [];
+var tanksDroplets = [];
+
 var enemies = [];
 var bulletsEnemies = [];
+
+const DIVERGENCE_DROPLET_POINT = 100; // max distance in which a droplet spawns when enemy killed
 
 const MAX_SPEED = 0.075;
 const ACCELERATION = 0.0075;
@@ -851,8 +1226,8 @@ const myPoint = new CordsPoint(document.getElementById("point"));
 
 const centerUser = document.getElementById("centerUser");
 
-const USER_BASE_LIVES = 10;
-const USER_BASE_SHIELD = 10;
+const USER_BASE_LIVES = 100;
+const USER_BASE_SHIELD = 100;
 
 var mouseX = window.innerWidth/2;
 var mouseY = window.innerHeight/2;
@@ -886,10 +1261,12 @@ const ENEMY_OPTIONS = {
     NUM_ENEMIES_LEGENDARY_MULTI: 1,
 }
 
+var imageCanon = document.getElementById("centerUser");
+
 const numEnemies = Object.values(ENEMY_OPTIONS) // Obtiene los valores del objeto
     .reduce((acc, value) => acc + value, 0); // Suma todos los valores
 
-var mainCanon = new Canon();
+var mainCanon = new Canon("basic1");
 
 var User = new UserGame(USER_BASE_LIVES, USER_BASE_SHIELD, numEnemies);
 
@@ -903,11 +1280,39 @@ window.addEventListener("mousemove", function(e) {
     mouseY = e.clientY;
 })
 
+window.addEventListener("resize", function(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+})
+
 window.addEventListener("keydown", e => {
     if (e.key == "ArrowUp" || e.key == "w") keyController.up = true;
     else if (e.key == "ArrowDown" || e.key == "s") keyController.down = true;
     else if (e.key == "ArrowRight" || e.key == "d") keyController.right = true;
     else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = true;
+
+    // Change tank
+    else if (e.key = "x") {
+        let minDistance = DISTANCE_SHOW_DROPLET_DETAILS + 1;
+        let selectedDroplet = -1;
+        for (let i = 0; i < tanksDroplets.length; ++i) {
+            let distance = getDistancePoints(tanksDroplets[i].x, tanksDroplets[i].y, pos00x+window.innerWidth/2, pos00y+window.innerHeight/2);
+            if (distance < 200) {
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    selectedDroplet = i;
+                }
+            }
+        }
+        if (selectedDroplet != -1) {
+            // Change current droplet for the just used droplet
+            let dataUsedDroplet = tanksDroplets[selectedDroplet];
+            tanksDroplets.splice(selectedDroplet, 1);
+            tanksDroplets.push(new Droplet(dataUsedDroplet.x, dataUsedDroplet.y, mainCanon.tank));
+
+            mainCanon.changeCanon(dataUsedDroplet.type);
+        }
+    }
 })
 window.addEventListener("keyup", e => {
     if (e.key == "ArrowUp" || e.key == "w") keyController.up = false;
@@ -916,12 +1321,46 @@ window.addEventListener("keyup", e => {
     else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = false;
 })
 
-window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
+//window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
                                                                 // al hacer click derecho, cosa que hace que
                                                                 // keyController funcione correctamente
                                                                 // (sin esto, si tienes clickado una tecla y 
                                                                 // haces doble click derecho y levantas la tecla
                                                                 // keyController sigue a true)
+
+// Spawn Droplets Function
+function spawnOtherDroplets(x, y, amountLives, amountShield) {
+    for (let i = 0; i < amountLives; ++i) {
+        let deviationX = randomIntFromInterval(-DIVERGENCE_DROPLET_POINT, DIVERGENCE_DROPLET_POINT);
+        let deviationY = randomIntFromInterval(-DIVERGENCE_DROPLET_POINT, DIVERGENCE_DROPLET_POINT);
+        dropletsOther.push(new Droplet(x+deviationX, y+deviationY, "lives"));
+    }
+    for (let i = 0; i < amountShield; ++i) {
+        let deviationX = randomIntFromInterval(-DIVERGENCE_DROPLET_POINT, DIVERGENCE_DROPLET_POINT);
+        let deviationY = randomIntFromInterval(-DIVERGENCE_DROPLET_POINT, DIVERGENCE_DROPLET_POINT);
+        dropletsOther.push(new Droplet(x+deviationX, y+deviationY, "shield"));
+    }
+}
+
+// Choose Tank to Spawn
+function selectTank(chances) { // chances is a list with a lenght of 4: [0] -> basic, [1] -> rare, [2] -> epic, [3] -> legendary
+    console.log("Chances of tank:")
+    console.log(chances);
+    let randomToChoose = Math.random();
+    console.log("Number:")
+    console.log(randomToChoose);
+    console.log("-------------------");
+    if (randomToChoose < chances[0]) {
+        return `basic${randomIntFromInterval(1, numTanksByType["basic"])}`;
+    }
+    else if (randomToChoose-chances[0] < chances[1]) {
+        return `rare${randomIntFromInterval(1, numTanksByType["rare"])}`;
+    }
+    else if (randomToChoose-chances[0]-chances[1] < chances[2]) {
+        return `epic${randomIntFromInterval(1, numTanksByType["epic"])}`;
+    }
+    else return `legendary${randomIntFromInterval(1, numTanksByType["legendary"])}`;
+}
 
 // Create Walls
 
@@ -947,7 +1386,6 @@ for (let i = 0; i < OPTIONS.NUM_WALLS; ++i) {
 
 // Create map limit walls
 c.save();
-c.strokeStyle = "#6e6e6e";
 let numWallsOneSide = 100*OPTIONS.MAP_SIZE/OPTIONS.WALL_SIZE;
 let mapSizePX = 100*OPTIONS.MAP_SIZE;
 for (let i = 0; i < mapSizePX; i+=OPTIONS.WALL_SIZE) {
@@ -1036,6 +1474,7 @@ function movePoint(){
     if (moves.MOVEY) my = -moves.DYR*100;
 
     c.clearRect(0, 0, innerWidth, innerHeight);
+
     let px = window.innerWidth / 2 + pos00x;
     let py = window.innerHeight / 2 + pos00y;
     for (let i = 0; i < walls.length; ++i) {
@@ -1071,7 +1510,6 @@ function movePoint(){
             }
         }
     }
-    c.shadowBlur = 10;
     for (let i = 0; i < mainCanon.bulletArray.length; ++i) {
         mainCanon.bulletArray[i].move(mx, my);
         let removed = false;
@@ -1100,10 +1538,11 @@ function movePoint(){
                 for (let j = 0; j < enemies.length; ++j) {
                     if (detectCricleCircleCollision(enemies[j].x, enemies[j].y, mainCanon.bulletArray[i].x+pos00x, mainCanon.bulletArray[i].y+pos00y,
                                                     enemies[j].config.radius, mainCanon.bulletArray[i].radius)) {
-                        --enemies[j].lives;
-                        if (enemies[j].lives == 0) {
-                            User.increaseLives(enemies[j].config.awardLives);
-                            User.increaseShield(enemies[j].config.awardShield);
+                        enemies[j].reduceLives(mainCanon.bulletArray[i].damage);
+                        if (enemies[j].lives <= 0) {
+                            spawnOtherDroplets(enemies[j].x, enemies[j].y, enemies[j].config.awardLives, enemies[j].config.awardShield);
+                            tanksDroplets.push(new Droplet(enemies[j].x, enemies[j].y, selectTank(enemies[j].config.spawningChance)))
+                            console.log("ENEMY KILLED");
                             User.increaseXP(enemies[j].config.awardXP);
                             // remove enemy
                             User.decreaseNumEnemies();
@@ -1119,7 +1558,6 @@ function movePoint(){
             }
         } 
     }
-    c.shadowBlur = 0;
 
     for (let i = 0; i < enemies.length; ++i) {
         c.save();
@@ -1139,7 +1577,7 @@ function movePoint(){
             // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
-            User.makeDamage(1);
+            User.makeDamage(10);
             User.reduceXP(10);
         }
         else if (bulletsEnemies[i].counterIterations == 0) {
@@ -1147,6 +1585,21 @@ function movePoint(){
             bulletsEnemies.splice(i, 1);
             --i;
         }
+    }
+
+    for (let i = 0; i < dropletsOther.length; ++i) {
+        dropletsOther[i].move(mx, my);
+        if (detectCricleCircleCollision(dropletsOther[i].x-pos00x, dropletsOther[i].y-pos00y, window.innerWidth/2, window.innerHeight/2, dropletsOther[i].radius, RADIUS_TANK)) {
+            let useful = dropletsOther[i].use();
+            if (useful) {
+                dropletsOther.splice(i, 1);
+                --i;
+            }
+        }
+    }
+
+    for (let i = 0; i < tanksDroplets.length; ++i) {
+        tanksDroplets[i].move(mx, my);
     }
 
     User.printData();
@@ -1168,7 +1621,7 @@ document.getElementById("playDiv").addEventListener("click", () => {
         document.getElementById("playDivBckg").style.display = "none";
         document.getElementById("centerUser").style.display = "block";
         var keepShooting;
-var mousePressed = false;
+        var mousePressed = false;
 
     window.addEventListener("mousedown", (e) => {
         if (!mousePressed) {
