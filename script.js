@@ -772,6 +772,19 @@ var dropletData = {
         image: "./tanks/basic3.png",
         shadowColor: "#575757"
     },
+    "basic4":{ // TODO MULTISHOOT
+        name: "Escopeta Corredera Angular",
+        iShoot: 1500, // in ms
+        damage: 10,
+        numBalls: 3,
+        speed: 10,
+        rangeB: 45,
+        size: 13,
+        centerBalls: 1, // just useful if numBalls > 1
+        angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/basic4.png",
+        shadowColor: "#575757"
+    },
     "rare1":{
         name: "Pistola Centinela de Corta Distáncia",
         iShoot: 750, // in ms
@@ -785,16 +798,16 @@ var dropletData = {
         image: "./tanks/rare1.png",
         shadowColor: "#6a94a4"
     },
-    "rare2":{ // TODO MULTISHOOT
-        name: "Escopeta Corredera Angular",
+    "rare2":{
+        name: "Repulsor Táctico",
         iShoot: 1500, // in ms
-        damage: 15,
-        numBalls: 3,
+        damage: 8,
+        numBalls: 7,
         speed: 10,
-        rangeB: 45,
-        size: 13,
+        rangeB: 70,
+        size: 10,
         centerBalls: 1, // just useful if numBalls > 1
-        angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        angularDivision: 204, // just useful if numBalls > 1 and centerBalls < numBalls
         image: "./tanks/rare2.png",
         shadowColor: "#6a94a4"
     },
@@ -855,7 +868,7 @@ var dropletData = {
         iShoot: 500, // in ms
         damage: 40,
         numBalls: 1,
-        speed: 17,
+        speed: 16,
         rangeB: 40,
         size: 13,
         centerBalls: 0, // just useful if numBalls > 1
@@ -892,7 +905,7 @@ var dropletData = {
 }
 
 var numTanksByType = {
-    "basic":3,
+    "basic":4,
     "rare":3,
     "epic":3,
     "legendary":3
