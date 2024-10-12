@@ -784,7 +784,7 @@ var dropletData = {
     "rare2":{ // TODO MULTISHOOT
         name: "Escopeta Corredera Angular",
         iShoot: 1500, // in ms
-        damage: 10,
+        damage: 15,
         numBalls: 3,
         speed: 10,
         rangeB: 45,
@@ -1211,7 +1211,7 @@ const FRICTION = 0.98;
 const MIN_SPEED = 0.001;
 
 const RADIUS_TANK = 40; // in pixels
-// do not change this value, it's an aproximation of the radius of image baseTank.png
+// do not change this value, it's an aproximation of the radius of tanks
 
 const SCREEN_CENTER = {
     x: window.innerWidth/2,
@@ -1286,13 +1286,14 @@ window.addEventListener("resize", function(){
 })
 
 window.addEventListener("keydown", e => {
-    if (e.key == "ArrowUp" || e.key == "w") keyController.up = true;
-    else if (e.key == "ArrowDown" || e.key == "s") keyController.down = true;
-    else if (e.key == "ArrowRight" || e.key == "d") keyController.right = true;
-    else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = true;
+    console.log(e.code);
+    if (e.code == "ArrowUp" || e.code == "KeyW") keyController.up = true;
+    else if (e.code == "ArrowDown" || e.code == "KeyS") keyController.down = true;
+    else if (e.code == "ArrowRight" || e.code == "KeyD") keyController.right = true;
+    else if (e.code == "ArrowLeft" || e.code == "KeyA") keyController.left = true;
 
     // Change tank
-    else if (e.key = "x") {
+    else if (e.code == "Space") {
         let minDistance = DISTANCE_SHOW_DROPLET_DETAILS + 1;
         let selectedDroplet = -1;
         for (let i = 0; i < tanksDroplets.length; ++i) {
@@ -1315,10 +1316,10 @@ window.addEventListener("keydown", e => {
     }
 })
 window.addEventListener("keyup", e => {
-    if (e.key == "ArrowUp" || e.key == "w") keyController.up = false;
-    else if (e.key == "ArrowDown" || e.key == "s") keyController.down = false;
-    else if (e.key == "ArrowRight" || e.key == "d") keyController.right = false;
-    else if (e.key == "ArrowLeft" || e.key == "a") keyController.left = false;
+    if (e.code == "ArrowUp" || e.code == "KeyW") keyController.up = false;
+    else if (e.code == "ArrowDown" || e.code == "KeyS") keyController.down = false;
+    else if (e.code == "ArrowRight" || e.code == "KeyD") keyController.right = false;
+    else if (e.code == "ArrowLeft" || e.code == "KeyA") keyController.left = false;
 })
 
 //window.addEventListener("contextmenu", e => e.preventDefault()); // hace que no se genere el contextmenu
