@@ -370,9 +370,6 @@ class Enemy{
         }
     }
     printInScreen(){
-        if (this.livesAnimation > this.lives) {
-            this.livesAnimation--;
-        }
         // print enemy
         c.drawImage(this.baseImage, this.x-pos00x-this.config.radius, this.y-pos00y-this.config.radius,
             this.config.radius*2, this.config.radius*2);
@@ -389,6 +386,9 @@ class Enemy{
         c.fill();
     }
     move(dx, dy) {
+        if (this.livesAnimation > this.lives) {
+            this.livesAnimation--;
+        }
         this.x += dx;
         this.y += dy;
         if (this.inScreen()) {
