@@ -836,7 +836,7 @@ var dropletData = {
         shadowColor: "#6a94a4"
     },
     "rare4":{
-        name: "Escopeta",
+        name: "Escopeta de Cazador",
         statusRank: "Raro",
         iShoot: 1000, // in ms
         damage: 3,
