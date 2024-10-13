@@ -827,8 +827,8 @@ var dropletData = {
         iShoot: 1500, // in ms
         damage: 20,
         numBalls: 1,
-        speed: 5,
-        rangeB: 120,
+        speed: 4,
+        rangeB: 150,
         size: 30,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
@@ -880,7 +880,7 @@ var dropletData = {
     "legendary1":{
         name: "Pistola Imperial",
         statusRank: "Legendario",
-        iShoot: 500, // in ms
+        iShoot: 600, // in ms
         damage: 40,
         numBalls: 1,
         speed: 16,
