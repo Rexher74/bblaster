@@ -835,6 +835,20 @@ var dropletData = {
         image: "./tanks/rare3.png",
         shadowColor: "#6a94a4"
     },
+    "rare4":{
+        name: "Escopeta",
+        statusRank: "Raro",
+        iShoot: 1000, // in ms
+        damage: 3,
+        numBalls: 7,
+        speed: 15,
+        rangeB: 25,
+        size: 7,
+        centerBalls: 1, // just useful if numBalls > 1
+        angularDivision: 25, // just useful if numBalls > 1 and centerBalls < numBalls
+        image: "./tanks/rare4.png",
+        shadowColor: "#6a94a4"
+    },
     "epic1":{ // TODO MULTISHOOT
         name: "Escopeta Bélica de Corta Distáncia",
         statusRank: "Epico",
@@ -923,7 +937,7 @@ var dropletData = {
 
 var numTanksByType = {
     "basic":4,
-    "rare":3,
+    "rare":4,
     "epic":3,
     "legendary":3
 }
@@ -1379,12 +1393,7 @@ function spawnOtherDroplets(x, y, amountLives, amountShield) {
 
 // Choose Tank to Spawn
 function selectTank(chances) { // chances is a list with a lenght of 4: [0] -> basic, [1] -> rare, [2] -> epic, [3] -> legendary
-    console.log("Chances of tank:")
-    console.log(chances);
     let randomToChoose = Math.random();
-    console.log("Number:")
-    console.log(randomToChoose);
-    console.log("-------------------");
     if (randomToChoose < chances[0]) {
         return `basic${randomIntFromInterval(1, numTanksByType["basic"])}`;
     }
