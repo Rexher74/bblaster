@@ -839,7 +839,7 @@ var dropletData = {
         name: "Escopeta de Cazador",
         statusRank: "Raro",
         iShoot: 1000, // in ms
-        damage: 3,
+        damage: 4,
         numBalls: 7,
         speed: 15,
         rangeB: 25,
