@@ -247,8 +247,8 @@ class Canon{
         this.bulletArray = [];
         this.lastShoot = performance.now()-this.intervalShooting;
     }
-    shoot(ex, ey) {
-        if (performance.now()-this.lastShoot > this.intervalShooting) {
+    shoot(ex, ey, ignoreTimming) {
+        if ((performance.now()-this.lastShoot > this.intervalShooting) || ignoreTimming) {
             let varXPos = ex - window.innerWidth/2;
             let varYPos = ey - window.innerHeight/2;
             let unitaryVect = unitVector(varXPos, varYPos);
@@ -289,6 +289,13 @@ class Canon{
             }
             else { // normal shoot
                 this.bulletArray.push(new Bullet(unitaryVect[0], unitaryVect[1], this.bulletSize, this.bulletSpeed, window.innerWidth/2, window.innerHeight/2, this.bulletRange, "black", undefined, this.damage));
+            }
+            if (this.canonData.repeatShoot.do && !ignoreTimming) {
+                for (let i = 1; i < this.canonData.repeatShoot.num+1; ++i) {
+                    setTimeout(() => {
+                        this.shoot(mouseX, mouseY, true);
+                    }, this.canonData.repeatShoot.time*i)
+                }
             }
             this.lastShoot = performance.now();
         }
@@ -351,6 +358,7 @@ class Enemy{
         this.config = enemyConfiguration[type];
         this.iterationAlterner = 0; // just useful if predefinedIt feature of this.config is true
         this.lives = this.config.lives;
+        this.attackBool = !this.config.bConfig.onattack;
         this.livesAnimation = this.config.lives;
         this.iniLives = this.config.lives;
         this.lastShoot = performance.now();
@@ -387,7 +395,7 @@ class Enemy{
     }
     move(dx, dy) {
         if (this.livesAnimation > this.lives) {
-            this.livesAnimation--;
+            this.livesAnimation-=2;
         }
         this.x += dx;
         this.y += dy;
@@ -398,23 +406,23 @@ class Enemy{
     shootEnemyPredefined(desviation){ // function just for predefined4 and predefinedIt features
         if (desviation) {
             bulletsEnemies.push(new Bullet(1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(0, 1, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(-1, 0, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(0, -1, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
         else {
             bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(-Math.sqrt(2)/2, -Math.sqrt(2)/2, this.config.radiusBullets, this.config.bulletEnemySpeed,
-            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
     }
     shootEnemy() {
@@ -438,9 +446,9 @@ class Enemy{
             let normalVect1 = [-unitaryVect[1]*this.config.radiusBullets, unitaryVect[0]*this.config.radiusBullets];
             let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
         else if (this.config.bConfig.tripleBullet) {
             let varX = window.innerWidth/2 - (this.x - pos00x);
@@ -448,11 +456,11 @@ class Enemy{
             let unitaryVect = unitVector(varX, varY);
             let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 30);
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
         else if (this.config.bConfig.multi) {
             let varX = window.innerWidth/2 - (this.x - pos00x);
@@ -462,32 +470,35 @@ class Enemy{
             let normalVect2 = [unitaryVect[1]*this.config.radiusBullets, -unitaryVect[0]*this.config.radiusBullets];
             // center
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x + normalVect1[0], this.y - pos00y + normalVect1[1], this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x + normalVect2[0], this.y - pos00y + normalVect2[1], this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             // laterals
             let vectorRightLeftRorated = rotarVectorGrados(unitaryVect, 20);
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.derecha[0], vectorRightLeftRorated.derecha[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
             bulletsEnemies.push(new Bullet(vectorRightLeftRorated.izquierda[0], vectorRightLeftRorated.izquierda[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                    this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
         else {
             let varX = window.innerWidth/2 - (this.x - pos00x);
             let varY = window.innerHeight/2 - (this.y - pos00y);
             let unitaryVect = unitVector(varX, varY);
             bulletsEnemies.push(new Bullet(unitaryVect[0], unitaryVect[1], this.config.radiusBullets, this.config.bulletEnemySpeed,
-                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, 1));
+                                            this.x - pos00x, this.y - pos00y, this.config.bRange, this.config.color, this.config.bConfig, this.config.bConfig.damage));
         }
         this.lastShoot = performance.now();
     }
     tryShoot() {
         if (getDistancePoints(this.x-pos00x, this.y-pos00y, window.innerWidth/2, window.innerHeight/2) < 1500
-            && performance.now() - this.lastShoot > this.config.intervalShooting) {
+            && performance.now() - this.lastShoot > this.config.intervalShooting && this.attackBool) {
             this.shootEnemy();
         }
     }
     reduceLives(amount) {
+        if (!this.attackBool) {
+            this.attackBool = true;
+        }
         this.lives -= amount;
     }
     
@@ -678,7 +689,7 @@ class Droplet{
         c.fillText(`${this.dataDroplet.statusRank}`, this.x-pos00x, this.y-pos00y+this.radius+25);
         c.fillStyle = "black";
         c.font = "12.5px Raleway";
-        c.fillText(`Daño por Disparo: ${this.dataDroplet.damage*this.dataDroplet.numBalls}`, this.x-pos00x, this.y-pos00y+this.radius+40);
+        c.fillText(`Daño por Disparo: ${this.dataDroplet.damage*this.dataDroplet.numBalls*(1+this.dataDroplet.repeatShoot.num)}`, this.x-pos00x, this.y-pos00y+this.radius+40);
         c.fillText(`Tiempo de Carga: ${this.dataDroplet.iShoot/1000} segundos`, this.x-pos00x, this.y-pos00y+this.radius+55);
         c.restore();
     }
@@ -748,6 +759,11 @@ var dropletData = {
         size: 15,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times IMPORTANT: it have to be set to 0 if is not used to show properly the Daño POr Disparo in the droplet
+        },
         image: "./tanks/basic1.png",
         shadowColor: "#575757"
     },
@@ -762,6 +778,11 @@ var dropletData = {
         size: 8,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/basic2.png",
         shadowColor: "#575757"
     },
@@ -776,6 +797,11 @@ var dropletData = {
         size: 15,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/basic3.png",
         shadowColor: "#575757"
     },
@@ -790,7 +816,31 @@ var dropletData = {
         size: 13,
         centerBalls: 1, // just useful if numBalls > 1
         angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/basic4.png",
+        shadowColor: "#575757"
+    },
+    "basic5":{ // TODO MULTISHOOT
+        name: "Fusil de Ráfaga Doble",
+        statusRank: "Común",
+        iShoot: 1200, // in ms
+        damage: 6,
+        numBalls: 1,
+        speed: 12,
+        rangeB: 45,
+        size: 11,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: true, // do it or not
+            time: 200, // if do == true, repeat every this time
+            num: 1 // if do == true, repeat this num of times (so total bullets shoots = 1+num)
+        },
+        image: "./tanks/basic5.png",
         shadowColor: "#575757"
     },
     "rare1":{
@@ -804,6 +854,11 @@ var dropletData = {
         size: 15,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/rare1.png",
         shadowColor: "#6a94a4"
     },
@@ -811,13 +866,18 @@ var dropletData = {
         name: "Repulsor Táctico",
         statusRank: "Raro",
         iShoot: 1500, // in ms
-        damage: 8,
+        damage: 10,
         numBalls: 7,
         speed: 10,
         rangeB: 70,
         size: 10,
         centerBalls: 1, // just useful if numBalls > 1
         angularDivision: 204, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/rare2.png",
         shadowColor: "#6a94a4"
     },
@@ -832,6 +892,11 @@ var dropletData = {
         size: 30,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/rare3.png",
         shadowColor: "#6a94a4"
     },
@@ -846,6 +911,11 @@ var dropletData = {
         size: 7,
         centerBalls: 1, // just useful if numBalls > 1
         angularDivision: 25, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/rare4.png",
         shadowColor: "#6a94a4"
     },
@@ -860,6 +930,11 @@ var dropletData = {
         size: 8,
         centerBalls: 3, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/epic1.png",
         shadowColor: "#6942b5"
     },
@@ -874,6 +949,11 @@ var dropletData = {
         size: 8,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/epic2.png",
         shadowColor: "#6942b5"
     },
@@ -888,7 +968,31 @@ var dropletData = {
         size: 25,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/epic3.png",
+        shadowColor: "#6942b5"
+    },
+    "epic4":{
+        name: "Fusil de Ráfaga de Asalto",
+        statusRank: "Epico",
+        iShoot: 800, // in ms
+        damage: 20,
+        numBalls: 1,
+        speed: 15,
+        rangeB: 50,
+        size: 10,
+        centerBalls: 0, // just useful if numBalls > 1
+        angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: true, // do it or not
+            time: 150, // if do == true, repeat every this time
+            num: 2 // if do == true, repeat this num of times
+        },
+        image: "./tanks/epic4.png",
         shadowColor: "#6942b5"
     },
     "legendary1":{
@@ -902,6 +1006,11 @@ var dropletData = {
         size: 13,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/legendary1.png",
         shadowColor: "#912a2b"
     },
@@ -916,6 +1025,11 @@ var dropletData = {
         size: 15,
         centerBalls: 0, // just useful if numBalls > 1
         angularDivision: 0, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/legendary2.png",
         shadowColor: "#912a2b"
     },
@@ -930,6 +1044,11 @@ var dropletData = {
         size: 6,
         centerBalls: 2, // just useful if numBalls > 1
         angularDivision: 40, // just useful if numBalls > 1 and centerBalls < numBalls
+        repeatShoot: {
+            do: false, // do it or not
+            time: NaN, // if do == true, repeat every this time
+            num: 0 // if do == true, repeat this num of times
+        },
         image: "./tanks/legendary3.png",
         shadowColor: "#912a2b"
     },
@@ -965,6 +1084,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -990,6 +1111,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1015,6 +1138,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1040,6 +1165,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1065,6 +1192,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1090,6 +1219,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1115,6 +1246,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1140,6 +1273,8 @@ var enemyConfiguration = {
             tripleBullet: true, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1165,6 +1300,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: true, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1190,6 +1327,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1215,6 +1354,8 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: true, // shoots 4 bullets
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
             presuit: false // bullets presuit canon
         }
     },
@@ -1240,6 +1381,36 @@ var enemyConfiguration = {
             tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
             wallTravesser: false, // bullets can go through walls
             multi: false,
+            onattack: false, // only attacks if you attack him first
+            damage: 1, // damage of the bullet
+            presuit: true // bullets presuit canon
+            
+        }
+    },
+    "miticBoss":{
+        lives: 1000, // enemy lives
+        intervalShooting: 2000, // millisecond between every shoot
+        bRange: 200, // iterations of the bullet
+        radius: 80, // radius of the enemy
+        radiusBullets: 30, // size of the bullet
+        bulletEnemySpeed: 9, // speed of the bullets (in px / iteration)
+        awardXP: 3000, // xp given when enemy killed
+        awardLives: 10, // lives given when enemy killed
+        awardShield: 10, // shield given when killed
+        color: "#ff9938", // color of the bullet
+        imgSrc: "./enemies/mitic1.png", // path to enemy image
+        spawningChance: [0, 0, 0, 1], // basic, rare, epic, legendary
+
+        // habilities
+        bConfig: {
+            predefined4: false, // bullets don't go to canon, just throw one with 0deg, 90deg, 180deg and 270deg
+            predefinedIt: false, // shoots bullets like predefined 4 but every change angles to +45deg every shoot
+            doubleBullet: false, // shoots double balls in same direction but paralel
+            tripleBullet: false, // shoots triple bullet in main direction and +- a certain angle (see implementation to know this angle)
+            wallTravesser: true, // bullets can go through walls
+            multi: false,
+            onattack: true, // only attacks if you attack him first
+            damage: 5, // damage of the bullet
             presuit: true // bullets presuit canon
         }
     },
@@ -1295,18 +1466,19 @@ const OPTIONS = {
 }
 
 const ENEMY_OPTIONS = {
-    NUM_ENEMIES_BASIC_ELEMENTARY: 20,
-    NUM_ENEMIES_BASIC_PREDEFINED4: 20,
-    NUM_ENEMIES_BASIC_BIGBALL: 20,
-    NUM_ENEMIES_RARE_ELEMENTARY: 15,
-    NUM_ENEMIES_RARE_DOUBLE: 15,
-    NUM_ENEMIES_RARE_PREDEFINEDIT: 15,
-    NUM_ENEMIES_EPIC_ELEMENTARY: 4,
-    NUM_ENEMIES_EPIC_WALLTRAVESSER: 4,
-    NUM_ENEMIES_EPIC_TRIPLE: 4,
+    NUM_ENEMIES_BASIC_ELEMENTARY: 16,
+    NUM_ENEMIES_BASIC_PREDEFINED4: 16,
+    NUM_ENEMIES_BASIC_BIGBALL: 16,
+    NUM_ENEMIES_RARE_ELEMENTARY: 11,
+    NUM_ENEMIES_RARE_DOUBLE: 11,
+    NUM_ENEMIES_RARE_PREDEFINEDIT: 11,
+    NUM_ENEMIES_EPIC_ELEMENTARY: 5,
+    NUM_ENEMIES_EPIC_WALLTRAVESSER: 5,
+    NUM_ENEMIES_EPIC_TRIPLE: 5,
     NUM_ENEMIES_LEGENDARY_ELEMENTARY: 1,
     NUM_ENEMIES_LEGENDARY_PRESUIT: 1,
     NUM_ENEMIES_LEGENDARY_MULTI: 1,
+    NUM_ENEMIES_MITIC_BOSS: 1
 }
 
 var imageCanon = document.getElementById("centerUser");
@@ -1334,7 +1506,6 @@ window.addEventListener("resize", function(){
 })
 
 window.addEventListener("keydown", e => {
-    console.log(e.code);
     if (e.code == "ArrowUp" || e.code == "KeyW") keyController.up = true;
     else if (e.code == "ArrowDown" || e.code == "KeyS") keyController.down = true;
     else if (e.code == "ArrowRight" || e.code == "KeyD") keyController.right = true;
@@ -1503,6 +1674,9 @@ function iniEnemies() {
     for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_LEGENDARY_PRESUIT; ++i) {
         spawnNewEnemy("legendaryPresuit");
     }
+    for (let i = 0; i < ENEMY_OPTIONS.NUM_ENEMIES_MITIC_BOSS; ++i) {
+        spawnNewEnemy("miticBoss");
+    }
 }
 
 
@@ -1586,7 +1760,6 @@ function movePoint(){
                         if (enemies[j].lives <= 0) {
                             spawnOtherDroplets(enemies[j].x, enemies[j].y, enemies[j].config.awardLives, enemies[j].config.awardShield);
                             tanksDroplets.push(new Droplet(enemies[j].x, enemies[j].y, selectTank(enemies[j].config.spawningChance)))
-                            console.log("ENEMY KILLED");
                             User.increaseXP(enemies[j].config.awardXP);
                             // remove enemy
                             User.decreaseNumEnemies();
@@ -1618,11 +1791,11 @@ function movePoint(){
     for (let i = 0; i < bulletsEnemies.length; ++i) {
         bulletsEnemies[i].move(mx, my);
         if (detectCricleCircleCollision(window.innerWidth/2, window.innerHeight/2, bulletsEnemies[i].x, bulletsEnemies[i].y, RADIUS_TANK, bulletsEnemies[i].radius)) {
+            User.makeDamage(10*bulletsEnemies[i].damage);
+            User.reduceXP(10);
             // remove enemy bullet
             bulletsEnemies.splice(i, 1);
             --i;
-            User.makeDamage(10);
-            User.reduceXP(10);
         }
         else if (bulletsEnemies[i].counterIterations == 0) {
             // remove enemy bullet
@@ -1669,10 +1842,10 @@ document.getElementById("playDiv").addEventListener("click", () => {
 
     window.addEventListener("mousedown", (e) => {
         if (!mousePressed) {
-            mainCanon.shoot(e.clientX, e.clientY);
+            mainCanon.shoot(e.clientX, e.clientY, false);
             mousePressed = true;
             keepShooting = setInterval(function(){
-                mainCanon.shoot(mouseX, mouseY);
+                mainCanon.shoot(mouseX, mouseY, false);
             })
         }
     })
