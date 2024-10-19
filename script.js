@@ -1905,6 +1905,7 @@ document.getElementById("playDiv").addEventListener("click", () => {
             movePoint();
     }
     else {
+        mobile = true;
         var touchPadBaseDOM = document.getElementById("touchPad");
         var tp = new TouchPad("rgb(200, 200, 200)");
 
