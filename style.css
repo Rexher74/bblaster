@@ -2,6 +2,9 @@ body {
     overflow: hidden;
     margin: 0;
 }
+body::backdrop{
+    background-color: rgba(255,255,255,0);
+}
 #upBoard {
     position: absolute;
     top: 10px;
@@ -75,4 +78,42 @@ body {
     width: 10vw;
     aspect-ratio: 1/1;
     background:rgba(172, 172, 172, 0.237);
+}
+
+#smartphoneFullScreen{
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    justify-content: center;
+    flex-direction: column;
+    font-family: "Raleway", sans-serif;
+    font-size: 24px;
+    padding: 10%;
+    box-sizing: border-box;
+    z-index: 100000;
+    background-color: #d2fdff;
+    font-weight: 500;
+    line-height: 150%;
+    display: none;
+}
+
+#smartphoneRotate{
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    justify-content: center;
+    flex-direction: column;
+    font-family: "Raleway", sans-serif;
+    font-size: 24px;
+    padding: 10%;
+    box-sizing: border-box;
+    z-index: 100000;
+    background-color: #d2fdff;
+    font-weight: 500;
+    line-height: 150%;
+    display: none;
 }

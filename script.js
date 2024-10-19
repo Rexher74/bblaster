@@ -1861,7 +1861,7 @@ function movePoint(){
     }
 
     User.printData();
-    tp.print();
+    if (mobile) tp.print();
     if (!endGame) {
         requestAnimationFrame(movePoint);
     }
@@ -1908,16 +1908,49 @@ document.getElementById("playDiv").addEventListener("click", () => {
         var touchPadBaseDOM = document.getElementById("touchPad");
         var tp = new TouchPad("rgb(200, 200, 200)");
 
-        touchPad.addEventListener("touchstart", function(e) {
+        touchPadBaseDOM.addEventListener("touchstart", function(e) {
             tp.drag(e.touches[0].clientX, e.touches[0].clientY);
         })
 
-        touchPad.addEventListener("touchmove", function(e) {
+        touchPadBaseDOM.addEventListener("touchmove", function(e) {
             tp.drag(e.touches[0].clientX, e.touches[0].clientY);
         })
 
-        touchPad.addEventListener("touchend", function(e) {
+        touchPadBaseDOM.addEventListener("touchend", function(e) {
             tp.moveToIni();
         })
     }
 })
+
+// Configure View
+var smartphoneRotate = document.getElementById("smartphoneRotate");
+var smartphoneFullScreen = document.getElementById("smartphoneFullScreen");
+
+var elem = document.body;
+function openFullscreen() {
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+    }
+}
+
+if (document.body.clientHeight > document.body.clientWidth || mobileAndTabletCheck()){
+    smartphoneFullScreen.style.display = "flex";
+    smartphoneFullScreen.addEventListener("click", function openFullScreenClick(){
+        openFullscreen();
+        smartphoneFullScreen.style.display = "none";
+        smartphoneFullScreen.removeEventListener("click", openFullScreenClick);
+        if (document.body.clientHeight > document.body.clientWidth) {
+            smartphoneRotate.style.display = "flex";
+            window.addEventListener("orientationchange", function changedScreenOrientation(){
+                if (document.body.clientHeight > document.body.clientWidth){
+                    window.removeEventListener("orientationchange", changedScreenOrientation);
+                    smartphoneRotate.style.display = "none";
+                }
+            })
+        }
+    })
+}
