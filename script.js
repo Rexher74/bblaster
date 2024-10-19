@@ -1882,7 +1882,7 @@ window.mobileAndTabletCheck = function esOrdenador() {
 }
 
 document.getElementById("playDiv").addEventListener("click", () => {
-    if (mobileAndTabletCheck) {
+    if (mobileAndTabletCheck()) {
         mobile = false;
         document.getElementById("playDivBckg").style.display = "none";
         document.getElementById("centerUser").style.display = "block";
