@@ -1097,9 +1097,9 @@ var dropletData = {
 }
 
 var numTanksByType = {
-    "basic":4,
+    "basic":5,
     "rare":4,
-    "epic":3,
+    "epic":4,
     "legendary":3
 }
 
