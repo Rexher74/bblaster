@@ -116,12 +116,22 @@ class CordsPoint {
         this.ele = element;
         this.updatePosition();
     }
-    move() {
+    move(mobile) {
+        let varX;
+        let varY;
+        if (!mobile) {
+            // Get direction
+            varX = keyController.right-keyController.left;
+            varY = keyController.down-keyController.up;
+        }
+        else {
+            let resVariance = tp.getVariance();
+            varX = resVariance[0];
+            varY = resVariance[1];
+        }
+
         let moveX = false;
         let moveY = false;
-        // Get direction
-        let varX = keyController.right-keyController.left;
-        let varY = keyController.down-keyController.up;
 
         // Aply friction
         this.dx*=FRICTION;
@@ -730,6 +740,37 @@ class Droplet{
         }
     }
     
+}
+
+class TouchPad{
+    constructor(colorTouch){
+        this.radiusBase = window.innerWidth/20;
+        this.baseX = this.radiusBase+20; // 20px of margin
+        this.baseY = window.innerHeight-this.radiusBase-20;
+        this.radiusTouch = this.radiusBase*0.4;
+        this.touchX = this.baseX;
+        this.touchY = this.baseY;
+        this.colorTouch = colorTouch;
+    }
+    drag(x, y){
+        if (x < this.baseX + this.radiusBase && x > this.baseX - this.radiusBase) this.touchX = x;
+        if (y < this.baseY + this.radiusBase && y > this.baseY - this.radiusBase) this.touchY = y;
+    }
+    print(){
+        c.save();
+        c.fillStyle = this.colorTouch;
+        c.beginPath();
+        c.arc(this.touchX, this.touchY, this.radiusTouch, 0, 2*Math.PI);
+        c.fill();
+        c.restore();
+    }
+    getVariance(){
+        return [(this.touchX-this.baseX)/this.radiusBase, (this.touchY-this.baseY)/this.radiusBase];
+    }
+    moveToIni(){
+        this.touchX = this.baseX;
+        this.touchY = this.baseY;
+    }
 }
 
 // General Configuration
@@ -1820,12 +1861,15 @@ function movePoint(){
     }
 
     User.printData();
+    tp.print();
     if (!endGame) {
         requestAnimationFrame(movePoint);
     }
 }
 
 // Start game config
+
+var mobile;
 
 window.mobileAndTabletCheck = function() {
     let check = false;
@@ -1835,31 +1879,45 @@ window.mobileAndTabletCheck = function() {
 
 document.getElementById("playDiv").addEventListener("click", () => {
     if (mobileAndTabletCheck) {
+        mobile = false;
         document.getElementById("playDivBckg").style.display = "none";
         document.getElementById("centerUser").style.display = "block";
         var keepShooting;
         var mousePressed = false;
 
-    window.addEventListener("mousedown", (e) => {
-        if (!mousePressed) {
-            mainCanon.shoot(e.clientX, e.clientY, false);
-            mousePressed = true;
-            keepShooting = setInterval(function(){
-                mainCanon.shoot(mouseX, mouseY, false);
-            })
-        }
-    })
+        window.addEventListener("mousedown", (e) => {
+            if (!mousePressed) {
+                mainCanon.shoot(e.clientX, e.clientY, false);
+                mousePressed = true;
+                keepShooting = setInterval(function(){
+                    mainCanon.shoot(mouseX, mouseY, false);
+                })
+            }
+        })
 
-    window.addEventListener("mouseup", function() {
-        if (mousePressed) {
-            clearInterval(keepShooting);
-            mousePressed = false;
-        }
-    })
-        iniEnemies();
-        movePoint();
+        window.addEventListener("mouseup", function() {
+            if (mousePressed) {
+                clearInterval(keepShooting);
+                mousePressed = false;
+            }
+        })
+            iniEnemies();
+            movePoint();
     }
     else {
-        alert("Sorry but unfourtunatelly our game isn't available for smartphones or tablets.\nConect via laptot/computer to play.")
+        var touchPadBaseDOM = document.getElementById("touchPad");
+        var tp = new TouchPad("rgb(200, 200, 200)");
+
+        touchPad.addEventListener("touchstart", function(e) {
+            tp.drag(e.touches[0].clientX, e.touches[0].clientY);
+        })
+
+        touchPad.addEventListener("touchmove", function(e) {
+            tp.drag(e.touches[0].clientX, e.touches[0].clientY);
+        })
+
+        touchPad.addEventListener("touchend", function(e) {
+            tp.moveToIni();
+        })
     }
-}) 
+})
