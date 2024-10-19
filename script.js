@@ -116,7 +116,7 @@ class CordsPoint {
         this.ele = element;
         this.updatePosition();
     }
-    move(mobile) {
+    move() {
         let varX;
         let varY;
         if (!mobile) {
@@ -128,6 +128,7 @@ class CordsPoint {
             let resVariance = tp.getVariance();
             varX = resVariance[0];
             varY = resVariance[1];
+            console.log("aa")
         }
 
         let moveX = false;
@@ -1881,6 +1882,8 @@ window.mobileAndTabletCheck = function esOrdenador() {
     return dispositivosMoviles.test(agenteUsuario);
 }
 
+var tp;
+
 document.getElementById("playDiv").addEventListener("click", () => {
     if (!mobileAndTabletCheck()) {
         mobile = false;
@@ -1908,7 +1911,7 @@ document.getElementById("playDiv").addEventListener("click", () => {
         mobile = true;
         var touchPadBaseDOM = document.getElementById("touchPad");
         touchPadBaseDOM.style.display = "block";
-        var tp = new TouchPad("rgb(200, 200, 200)");
+        tp = new TouchPad("rgb(200, 200, 200)");
 
         touchPadBaseDOM.addEventListener("touchstart", function(e) {
             tp.drag(e.touches[0].clientX, e.touches[0].clientY);
