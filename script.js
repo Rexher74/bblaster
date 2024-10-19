@@ -984,7 +984,7 @@ var dropletData = {
         name: "Francotirador de Larga Distáncia",
         statusRank: "Epico",
         iShoot: 900, // in ms
-        damage: 50,
+        damage: 40,
         numBalls: 1,
         speed: 15,
         rangeB: 100,
@@ -1021,7 +1021,7 @@ var dropletData = {
     "epic4":{
         name: "Fusil de Ráfaga de Asalto",
         statusRank: "Epico",
-        iShoot: 800, // in ms
+        iShoot: 1000, // in ms
         damage: 20,
         numBalls: 1,
         speed: 15,
